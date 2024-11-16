@@ -5,7 +5,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" type="image/png" href="{% static 'images/logo.png'%}"/>
-    <link rel="stylesheet" type="text/css" href="{% static 'css/main.css' %}">
     <title>{% block title %}{% endblock title %}</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -13,14 +12,18 @@
             theme: {
                 extend: {
                     colors: {
-                    clifford: '#da373d',
-                    }
+                        clifford: '#da373d',
+                    },
+                    fontFamily: {
+                        Satoshi: ['"Satoshi-Regular"', "sans-serif"],
+                    },
                 }
             }
         }
     </script>
+    <link rel="stylesheet" type="text/css" href="{% static 'css/main.css' %}">
 </head>
-<body>
+<body class="font-Satoshi">
     {% block content %}{% endblock content %}
 </body>
 </html>

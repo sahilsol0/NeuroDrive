@@ -3,6 +3,21 @@
 {% block title %}Login{% endblock title %}
 
 {% block content %}
-this is the login page
-<a href="{% url "user_register" %}">Register</a>
+<div class="max-w-sm mx-auto">
+    <form action="" method="post" class="max-w-sm mx-auto">
+        {% csrf_token %}
+        <div class="mb-5">
+            <label for="email" class="block mb-2 font-medium text-gray-900 ">Your Email</label>
+            {{form.username}}
+        </div>
+        <div class="mb-5">
+            <label for="password" class="block mb-2 text-gray-900">Your Password</label>
+            {{form.password}}
+        </div>
+        <p class="text-red-200">{{form.errors}}</p>
+        {% comment %} {{form.non_field_errors}} {% endcomment %}
+        <input type="submit" class="text-white  bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800" value="Login">
+    </form>
+    <p class="mt-5">I don't have an account <a href="{% url "user_register" %}" class="text-blue-500 hover:underline ">Register</a></p>
+</div>
 {% endblock content %}

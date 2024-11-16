@@ -3,11 +3,23 @@
 {% block title %}Register{% endblock title %}
 
 {% block content %}
-this is the register page
-<form action="" method="post">
-    {% csrf_token %}
-    {{form}}
-    <input type="submit" value="Register">
-</form>
-<a href="{% url "user_login" %}">Login</a>
+<div class="max-w-sm mx-auto">
+    <form action="" method="post" class="max-w-sm mx-auto">
+        {% csrf_token %}
+        <div class="mb-5">
+            <label for="email" class="block mb-2 text-sm font-medium text-gray-900 ">Your email</label>
+            {{form.email}}
+        </div>
+        <div class="mb-5">
+            <label for="password" class="block mb-2 text-sm font-medium text-gray-900">Your password</label>
+            {{form.password1}}
+        </div>
+        <div class="mb-5">
+            <label for="repeat-password" class="block mb-2 text-sm font-medium text-gray-900">Repeat password</label>
+            {{form.password2}}
+        </div>
+        <input type="submit" class="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800" value="Register">
+    </form>
+    <p class="mt-5">I already have an account <a href="{% url "user_login" %}" class="text-blue-500 hover:underline ">Login</a></p>
+</div>
 {% endblock content %}

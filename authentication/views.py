@@ -1,23 +1,38 @@
 from django.shortcuts import redirect, render
-from django.contrib.auth import login
-from django.urls import reverse_lazy
-from django.views import View
-from django.views.generic.edit import CreateView
-from . forms import CustomUserCreationForm
+from django.contrib.auth import login, authenticate, logout
+from . forms import CustomUserCreationForm, CustomAutheticationForm
 
-class UserLogin(View):
-    def get(self, request):
-        return render(request, 'login.html',context={})
+def register_view(request):
+    if request.method == 'POST':
+        form = CustomUserCreationForm(request.POST)
+        if form.is_valid():
+            user = form.save()
+            return redirect('register_success')
+    else:
+        form = CustomUserCreationForm
+    return render(request, 'register.html', {'form':form})
 
-class UserRegister(CreateView):
-    template_name = 'register.html'
-    success_url = '/user/success'
-    form_class = CustomUserCreationForm
+def login_view(request):
+    if request.method == 'POST':
+        form = CustomAutheticationForm(request, request.POST)
+        print(form.errors)
+        if form.is_valid():
+            email = form.cleaned_data['username']
+            password = form.cleaned_data['password']
+            user = authenticate(request, email=email, password=password)
+            if user is not None:
+                login(request, user)
+                return redirect('home')
+        else:
+            print('not valid')
+        print(form.non_field_errors)
+    else:
+        form = CustomAutheticationForm
+    return render(request, 'login.html', {'form': form})
     
-class UserLogout(View):
-    def get(self, request):
-        pass
+def logout_view(request):
+    logout(request)
+    return redirect('user_register')
     
-class Success(View):
-    def get(self, request):
-        return render(request, 'register_success.html',context={})
+def register_success_view(request):
+    return render(request, 'register_success.html')

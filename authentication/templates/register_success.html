@@ -3,5 +3,8 @@
 {% block title %}Registeration Successful{% endblock title %}
 
 {% block content %}
-Registration Successful
+<div class="container">
+    <p>Registration Successful</p>
+    <p>Go to <a href="{% url "user_login" %}">Login</a></p>
+</div>
 {% endblock content %}
