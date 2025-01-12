@@ -1,7 +1,7 @@
-from django.shortcuts import render
-from django.contrib.auth.models import User, auth
+from django.shortcuts import render, redirect
 from django.views import View
 
-class login(View):
+# Create your views here.
+class LoginView(View):
     def get(self, request):
-        return render(request, 'login.html',context={})
+        return render(request, 'login.html', context={})

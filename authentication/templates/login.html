@@ -1,8 +1,24 @@
 {% extends "base.html" %}
+{% load static %}
 
-{% block title %}Login{% endblock title %}
+{% block title %}Landing{% endblock title %}
+
+{% block nav %}
+	<a class="hidden w-0 lg:inline" href="#about">About</a>
+	<a class="hidden w-0 md:inline" href="#">Features</a>
+	{% comment %} <a class="px-4 py-2 rounded-full text-white bg-primary sm:px-16 md:py-4 md:ml-6" href="#">Log In</a> {% endcomment %}
+{% endblock nav %}
 
 {% block content %}
-this is the login page
+<section class="min-h-[80vh] flex justify-center items-center">
+	<div class="flex flex-col items-center lg:gap-12 lg:px-12 lg:py-12 rounded-3xl">
+		<h1 class="text-5xl font-bold">LOGIN</h1>
+		<form action="" method="post" class="flex flex-col lg:gap-8">
+			{% csrf_token %}
+			<input type="email" name="email" id="email" class="lg:h-12 lg:w-96 bg-secondary">
+			<input type="password" name="password" id="password" clasform-input class="lg:h-12 w-96 bg-secondary">
+			<input type="submit" value="Login" class="px-4 py-2 rounded-full self-center text-white bg-primary text-lg lg:text-xl md:px-16 md:py-4">
+		</form>
+	</div>
+</section>
 {% endblock content %}
-

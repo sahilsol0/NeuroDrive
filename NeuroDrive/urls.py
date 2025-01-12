@@ -1,10 +1,9 @@
 from django.contrib import admin
-from django.urls import include, path
-from . import views
-from NeuroDrive.views import home
+from django.urls import path, include
+from .views import LandingView
 
 urlpatterns = [
+    path('', LandingView.as_view(), name='landing'),
+    path('auth/', include('authentication.urls')),
     path('admin/', admin.site.urls),
-    path('', home.as_view(), name='home'),
-    path('user/', include('authentication.urls')),
 ]
