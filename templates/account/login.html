@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% load account socialaccount %}
+
+{% block head_title %}{% trans "Sign In" %}{% endblock %}
+
+{% block content %}
+<div class="flex items-center justify-center bg-gray-50 px-4 py-12 sm:px-6 lg:px-8">
+  <div class="w-full max-w-md space-y-8">
+    <div>
+      <h2 class="mt-6 text-center text-3xl font-bold tracking-tight text-gray-900">
+        {% trans "Sign In" %}
+      </h2>
+      <p class="mt-2 text-center text-sm text-gray-600">
+        {% trans "Don't have an account?" %}
+        <a href="{% url 'account_signup' %}" class="font-medium text-primary hover:text-indigo-500">
+          {% trans "Sign up" %}
+        </a>
+      </p>
+    </div>
+
+    <form class="mt-8 space-y-6" method="POST" action="{% url 'account_login' %}">
+      {% csrf_token %}
+      {% if redirect_field_value %}
+      <input type="hidden" name="{{ redirect_field_name }}" value="{{ redirect_field_value }}" />
+      {% endif %}
+
+      <div class="space-y-4 rounded-full shadow-sm">
+        <div>
+          <label for="id_login" class="sr-only">{% trans "Email address" %}</label>
+          <input id="id_login" name="login" type="email" autocomplete="email" required
+            class="relative block w-full rounded-full border-0 py-3 px-4 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-primary"
+            placeholder="{% trans 'Email address' %}">
+        </div>
+
+        <div>
+          <label for="id_password" class="sr-only">{% trans "Password" %}</label>
+          <input id="id_password" name="password" type="password" autocomplete="current-password" required
+            class="relative block w-full rounded-full border-0 py-3 px-4 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-primary"
+            placeholder="{% trans 'Password' %}">
+        </div>
+      </div>
+
+      <div class="flex items-center justify-between">
+        <div class="flex items-center">
+          <input id="remember" name="remember" type="checkbox"
+            class="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary">
+          <label for="remember" class="ml-2 block text-sm text-gray-900">{% trans "Remember me" %}</label>
+        </div>
+
+        <div class="text-sm">
+          <a href="{% url 'account_reset_password' %}" class="font-medium text-primary hover:opacity-60">
+            {% trans "Forgot your password?" %}
+          </a>
+        </div>
+      </div>
+
+      <div>
+        <button type="submit"
+          class="group relative flex w-full justify-center rounded-full bg-primary px-3 py-2 text-background hover:opacity-60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">
+          {% trans "Sign in" %}
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

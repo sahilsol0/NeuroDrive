@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Landing{% endblock title %}
+
+{% block nav %}
+	<a class="hidden w-0 hover:text-primary transition delay-50 duration-300 ease-in-out lg:inline" href="#about">About</a>
+	<a class="hidden w-0 hover:text-primary transition delay-50 duration-300 ease-in-out lg:inline" href="#features">Features</a>
+	<a class="py-1 px-16 md:py-2 lg:py-2 rounded-full text-white bg-primary lg:ml-6" href="{% url 'account_login' %}">Log In</a>
+{% endblock nav %}
+
+
+{% block content %}
+<section class="px-8 py-6 flex flex-col justify-between text-neutral-50 rounded-3xl bg-cover bg-center sm:px-24 sm:py-16" style="background-image: url('static/images/speedometer.jpg')">
+	<div>
+		<h1 class="text-4xl sm:text-8xl">Driver Safety <br>Made Easy.</h1>
+		<p class="sm:text-lg">Neuro Drive is a one stop solution for driver safety <br> and much more...</p>
+	</div>
+	<div class="flex justify-start mt-48 md:mt-48">
+		<a class="px-6 py-4 text-sm rounded-full bg-primary sm:px-16 sm:py-4 sm:text-xl" href="{% url "account_signup" %}">Get Started</a>
+		<a class="px-6 py-4 ml-4 text-sm rounded-full bg-primary/20 sm:px-16 sm:py-4 sm:text-xl sm:ml-6" href="{% url 'account_login' %}">Log In</a>
+	</div>
+</section>
+<section class="h-full flex flex-col items-center bg-secondary py-8 mt-8 md:py-36" id="features">
+	<div class="text-center md:text-4xl">NeuroDrive is a complete <br> <span class="text-primary">web based solution for managing drivers...</span></div>
+	<div class="w-4/5 grid sm:grid-cols-2 gap-4 mt-8 lg:w-6/12 sm:w-5/6 md:mt-16">
+		<div class="bg-white/20 border-2 border-white/20 text-black rounded-xl text-sm overflow-hidden grid grid-rows-2 md:text-xl">
+			<div class="bg-cover bg-bottom" style="background-image: url('static/images/traffic.jpg')">
+			</div>
+			<div class="px-4 py-4 md:px-12 md:py-8">
+				<h2 class="font-bold mb-2 md:mb-4">Drowsiness Detection</h2>
+				<h3>NeuroDrive provides a way to detect sleepiness and alert drivers in real time.</h3>
+			</div>
+		</div>
+		<div class="bg-white/20 border-2 border-white/20 text-black rounded-xl text-sm overflow-hidden grid grid-rows-2 md:text-xl">
+			<div class="bg-cover bg-top" style="background-image: url('static/images/dashboard.jpg')">
+			</div>
+			<div class="px-4 py-4 md:px-12 md:py-8">
+				<h2 class="font-bold mb-2 md:mb-4">Interactive Dashboard</h2>
+				<h3>An intuitive dashboard where drivers can view and manage their data.</h3>
+			</div>
+		</div>
+		<div class="bg-white/20 border-2 border-white/20 text-black rounded-xl text-sm overflow-hidden grid grid-rows-2 md:text-xl">
+			<div class="bg-cover bg-center" style="background-image: url('static/images/rating.jpg')">
+			</div>
+			<div class="px-4 py-4 md:px-12 md:py-8">
+				<h2 class="font-bold mb-2 md:mb-4">Improved Rating</h2>
+				<h3>NeuroDrive introduces a one of a kind rating system based on drivers' behavioral pattern.</h3>
+			</div>
+		</div>
+		<div class="bg-white/20 border-2 border-white/20 text-black rounded-xl text-sm overflow-hidden grid grid-rows-2 md:text-xl">
+			<div class="bg-cover bg-bottom" style="background-image: url('static/images/analytics.jpg')">
+			</div>
+			<div class="px-4 py-4 md:px-12 md:py-8">
+				<h2 class="font-bold mb-2 md:mb-4">Analytics</h2>
+				<h3>Analytics about the drivers giving insights on their driving behaviour.</h3>
+			</div>
+		</div>
+	</div>
+</section>
+<section class="flex flex-wrap justify-between rounded-3xl bg-primary text-white mt-8 md:text-2xl px-8 py-4 md:px-28 md:py-24">
+	<div class="mb-8 lg:mb-16 lg:text-6xl">
+		<p>You can start using NeuroDrive right now! All you need is a free account</p>
+	</div>
+	<div class="">
+		<p class="text-xs md:text-lg mb-4 md:mb-4">Create a new account... </p>
+		<a class="bg-black px-6 py-2 rounded-full animate-pulse" href="{% url "account_signup" %}">Sign Up</a>
+	</div>
+</section>
+{% endblock content %}

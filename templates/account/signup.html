@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% load account socialaccount %}
+
+{% block title %}{% trans "Sign Up" %}{% endblock %}
+
+{% block content %}
+<div class="flex items-center justify-center bg-gray-50 px-4 py-12 sm:px-6 lg:px-8">
+  <div class="w-full max-w-md space-y-8">
+    <div>
+      <h2 class="mt-6 text-center text-3xl font-bold tracking-tight text-gray-900">
+        {% trans "Sign Up" %}
+      </h2>
+      <p class="mt-2 text-center text-sm text-gray-600">
+        {% trans "Already have an account?" %}
+        <a href="{% url 'account_login' %}" class="font-medium text-primary hover:text-indigo-500">
+          {% trans "Sign in" %}
+        </a>
+      </p>
+    </div>
+
+    <form class="mt-8 space-y-6" method="POST" action="{% url 'account_signup' %}">
+      {% csrf_token %}
+      {% if redirect_field_value %}
+      <input type="hidden" name="{{ redirect_field_name }}" value="{{ redirect_field_value }}" />
+      {% endif %}
+
+      <div class="space-y-4 rounded-full">
+        <div>
+          <label for="id_email" class="sr-only">{% trans "Email address" %}</label>
+          <input id="id_email" name="email" type="email" autocomplete="email" required
+            class="relative block w-full rounded-full border-0 py-3 px-4 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-primary"
+            placeholder="{% trans 'Email address' %}">
+        </div>
+
+        <div>
+          <label for="id_password1" class="sr-only">{% trans "Password" %}</label>
+          <input id="id_password1" name="password1" type="password" autocomplete="new-password" required
+            class="relative block w-full rounded-full border-0 py-3 px-4 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-primary"
+            placeholder="{% trans 'Password' %}">
+        </div>
+
+        <div>
+          <label for="id_password2" class="sr-only">{% trans "Password (again)" %}</label>
+          <input id="id_password2" name="password2" type="password" autocomplete="new-password" required
+            class="relative block w-full rounded-full border-0 py-3 px-4 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-1 focus:ring-inset focus:ring-primary"
+            placeholder="{% trans 'Confirm Password' %}">
+        </div>
+      </div>
+
+      <div>
+        <button type="submit"
+          class="group relative flex w-full justify-center rounded-full bg-primary px-3 py-2 text-background hover:bg-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">
+          {% trans "Sign Up" %}
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
