@@ -6,7 +6,7 @@
 {% block nav %}
 	<a class="hidden w-0 hover:text-primary transition delay-50 duration-300 ease-in-out lg:inline" href="#about">About</a>
 	<a class="hidden w-0 hover:text-primary transition delay-50 duration-300 ease-in-out lg:inline" href="#features">Features</a>
-	<a class="py-1 px-16 md:py-2 lg:py-2 rounded-full text-white bg-primary lg:ml-6" href="{% url 'account_login' %}">Log In</a>
+	<a class="py-1 px-16 md:py-2 lg:py-2 rounded-full text-white bg-primary lg:ml-6" href="{% url 'account_login' %}">Sign In</a>
 {% endblock nav %}
 
 
@@ -18,7 +18,7 @@
 	</div>
 	<div class="flex justify-start mt-48 md:mt-48">
 		<a class="px-6 py-4 text-sm rounded-full bg-primary sm:px-16 sm:py-4 sm:text-xl" href="{% url "account_signup" %}">Get Started</a>
-		<a class="px-6 py-4 ml-4 text-sm rounded-full bg-primary/20 sm:px-16 sm:py-4 sm:text-xl sm:ml-6" href="{% url 'account_login' %}">Log In</a>
+		<a class="px-6 py-4 ml-4 text-sm rounded-full bg-primary/20 sm:px-16 sm:py-4 sm:text-xl sm:ml-6" href="{% url 'account_login' %}">Sign In</a>
 	</div>
 </section>
 <section class="h-full flex flex-col items-center bg-secondary py-8 mt-8 md:py-36" id="features">

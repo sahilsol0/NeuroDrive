@@ -2,7 +2,7 @@
 {% load i18n %}
 {% load account socialaccount %}
 
-{% block head_title %}{% trans "Sign In" %}{% endblock %}
+{% block title %}{% trans "Sign In" %}{% endblock %}
 
 {% block content %}
 <div class="flex items-center justify-center bg-gray-50 px-4 py-12 sm:px-6 lg:px-8">
@@ -13,11 +13,23 @@
       </h2>
       <p class="mt-2 text-center text-sm text-gray-600">
         {% trans "Don't have an account?" %}
-        <a href="{% url 'account_signup' %}" class="font-medium text-primary hover:text-indigo-500">
+        <a href="{% url 'account_signup' %}" class="font-medium text-indigo-600 hover:text-indigo-500">
           {% trans "Sign up" %}
         </a>
       </p>
     </div>
+
+    {% if messages %}
+    <div class="space-y-2">
+      {% for message in messages %}
+      <div class="rounded-full p-4 {% if message.tags == 'error' %}bg-red-50{% elif message.tags == 'success' %}bg-green-50{% else %}bg-blue-50{% endif %}">
+        <p class="text-sm {% if message.tags == 'error' %}text-red-700{% elif message.tags == 'success' %}text-green-700{% else %}text-blue-700{% endif %}">
+          {{ message }}
+        </p>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
 
     <form class="mt-8 space-y-6" method="POST" action="{% url 'account_login' %}">
       {% csrf_token %}
@@ -25,31 +37,45 @@
       <input type="hidden" name="{{ redirect_field_name }}" value="{{ redirect_field_value }}" />
       {% endif %}
 
+      {% if form.non_field_errors %}
+      <div class="rounded-full bg-red-50 p-4">
+        {% for error in form.non_field_errors %}
+        <p class="text-sm text-red-700">{{ error }}</p>
+        {% endfor %}
+      </div>
+      {% endif %}
+
       <div class="space-y-4 rounded-full shadow-sm">
         <div>
           <label for="id_login" class="sr-only">{% trans "Email address" %}</label>
           <input id="id_login" name="login" type="email" autocomplete="email" required
-            class="relative block w-full rounded-full border-0 py-3 px-4 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-primary"
+            class="relative block w-full rounded-full border-0 py-3 px-4 text-gray-900 ring-1 ring-inset {% if form.login.errors %}ring-red-500{% else %}ring-gray-300{% endif %} placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600"
             placeholder="{% trans 'Email address' %}">
+          {% if form.login.errors %}
+          <p class="mt-2 text-sm text-red-600">{{ form.login.errors.0 }}</p>
+          {% endif %}
         </div>
 
         <div>
           <label for="id_password" class="sr-only">{% trans "Password" %}</label>
           <input id="id_password" name="password" type="password" autocomplete="current-password" required
-            class="relative block w-full rounded-full border-0 py-3 px-4 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-primary"
+            class="relative block w-full rounded-full border-0 py-3 px-4 text-gray-900 ring-1 ring-inset {% if form.password.errors %}ring-red-500{% else %}ring-gray-300{% endif %} placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600"
             placeholder="{% trans 'Password' %}">
+          {% if form.password.errors %}
+          <p class="mt-2 text-sm text-red-600">{{ form.password.errors.0 }}</p>
+          {% endif %}
         </div>
       </div>
 
       <div class="flex items-center justify-between">
         <div class="flex items-center">
           <input id="remember" name="remember" type="checkbox"
-            class="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary">
+            class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600">
           <label for="remember" class="ml-2 block text-sm text-gray-900">{% trans "Remember me" %}</label>
         </div>
 
         <div class="text-sm">
-          <a href="{% url 'account_reset_password' %}" class="font-medium text-primary hover:opacity-60">
+          <a href="{% url 'account_reset_password' %}" class="font-medium text-indigo-600 hover:text-indigo-500">
             {% trans "Forgot your password?" %}
           </a>
         </div>
@@ -57,7 +83,7 @@
 
       <div>
         <button type="submit"
-          class="group relative flex w-full justify-center rounded-full bg-primary px-3 py-2 text-background hover:opacity-60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">
+          class="group relative flex w-full justify-center rounded-full bg-primary px-3 py-2 text-sm font-semibold text-white hover:bg-primary/70">
           {% trans "Sign in" %}
         </button>
       </div>

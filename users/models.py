@@ -1,6 +1,9 @@
 from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.db import models
 
+from django.db.models.signals import pre_delete, post_delete
+from django.dispatch import receiver
+
 class CustomUserManager(BaseUserManager):
     def create_user(self, email, password=None, **extra_fields):
         if not email:
@@ -33,3 +36,11 @@ class CustomUser(AbstractUser):
 
     def __str__(self):
         return self.email
+    
+@receiver(pre_delete, sender=CustomUser)
+def log_user_delete_attempt(sender, instance, **kwargs):
+    print(f"Attempting to delete user: {instance.email}")
+
+@receiver(post_delete, sender=CustomUser)
+def log_user_deleted(sender, instance, **kwargs):
+    print(f"User deleted: {instance.email}")

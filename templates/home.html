@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Landing{% endblock title %}
+
+{% block nav %}
+	<a class="hidden w-0 hover:text-primary transition delay-50 duration-300 ease-in-out lg:inline" href="#">About</a>
+	<a class="hidden w-0 hover:text-primary transition delay-50 duration-300 ease-in-out lg:inline" href="#">Features</a>
+	<a class="py-1 px-16 md:py-2 lg:py-2 rounded-full text-white bg-primary lg:ml-6" href="{% url 'account_logout' %}">Log out</a>
+{% endblock nav %}
+
+{% block content %}
+<p class="text-9xl">Home</p>
+{% endblock content %}
