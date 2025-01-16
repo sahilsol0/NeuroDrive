@@ -8,4 +8,13 @@ class LandingView(View):
     
 @login_required()
 def home(request):
+    print(request)
     return render(request, "dashboard/home.html", context={})
+
+@login_required()
+def leaderboard(request):
+    return render(request, "dashboard/leaderboard.html", context={})
+
+@login_required()
+def ratings(request):
+    return render(request, "dashboard/ratings.html", context={})

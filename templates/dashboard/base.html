@@ -2,7 +2,7 @@
 {% load static %}
 {% load i18n %}
 
-{% block title %}Dashboard-{% block dashboard_title %}{% endblock dashboard_title %}{% endblock title %}
+{% block title %}Dashboard | {% block dashboard_title %}{% endblock dashboard_title %}{% endblock title %}
 
 {% block content %}
 <div class="flex flex-col h-screen bg-gray-100">
@@ -14,7 +14,7 @@
                     <i data-lucide="user" class="w-6 h-6"></i>
                 </button>
             </div>
-            <span class="text-lg font-semibold">{% trans "Dashboard" %}</span>
+            <span class="text-lg font-semibold">{% trans "Dashboard" %} | {{ request.resolver_match.url_name |title }}</span>
             <button id="mobile-menu-button" class="text-gray-500 hover:text-gray-700">
                 <i data-lucide="menu" class="w-6 h-6"></i>
             </button>
@@ -68,29 +68,33 @@
             </div>
             <div class="flex-1 overflow-y-auto">
                 <div class="px-4 py-2 space-y-1">
-                    <a href="{% url "home" %}" class="flex items-center px-4 py-3 text-white bg-primary rounded-lg">
+                    <a href="{% url "home" %}" class="flex items-center px-4 py-3 {% if request.resolver_match.url_name == 'home' %}text-white bg-primary{% else %}text-gray-700 hover:bg-gray-100{% endif %} rounded-lg">
                         <i data-lucide="home" class="w-5 h-5"></i>
                         <span class="ml-3">{% trans "Home" %}</span>
                     </a>
-                    <a href="#" class="flex items-center px-4 py-3 text-gray-700 rounded-lg hover:bg-gray-100">
+                    <a href="{% url "leaderboard" %}" class="flex items-center px-4 py-3 {% if request.resolver_match.url_name == 'leaderboard' %}text-white bg-primary{% else %}text-gray-700 hover:bg-gray-100{% endif %} rounded-lg">
                         <i data-lucide="trophy" class="w-5 h-5"></i>
                         <span class="ml-3">{% trans "Leaderboard" %}</span>
                     </a>
-                    <a href="#" class="flex items-center px-4 py-3 text-gray-700 rounded-lg hover:bg-gray-100">
+                    <a href="{% url "ratings" %}" class="flex items-center px-4 py-3 {% if request.resolver_match.url_name == 'ratings' %}text-white bg-primary{% else %}text-gray-700 hover:bg-gray-100{% endif %} rounded-lg">
                         <i data-lucide="star" class="w-5 h-5"></i>
                         <span class="ml-3">{% trans "Ratings" %}</span>
                     </a>
-                    <a href="#" class="flex items-center px-4 py-3 text-gray-700 rounded-lg hover:bg-gray-100">
+                    <a href="#" class="flex items-center px-4 py-3 {% if request.resolver_match.url_name == 'settings' %}text-white bg-primary{% else %}text-gray-700 hover:bg-gray-100{% endif %} rounded-lg">
                         <i data-lucide="settings" class="w-5 h-5"></i>
                         <span class="ml-3">{% trans "Settings" %}</span>
                     </a>
-                    <a href="#" class="flex items-center px-4 py-3 text-gray-700 rounded-lg hover:bg-gray-100">
+                    <a href="#" class="flex items-center px-4 py-3 {% if request.resolver_match.url_name == 'help' %}text-white bg-primary{% else %}text-gray-700 hover:bg-gray-100{% endif %} rounded-lg">
                         <i data-lucide="help-circle" class="w-5 h-5"></i>
                         <span class="ml-3">{% trans "Help" %}</span>
                     </a>
                 </div>
             </div>
             <div class="p-4 border-t">
+                <div class="flex items-center space-x-3 px-4 py-3">
+                    <i data-lucide="mail" class="w-5 h-5 text-gray-400"></i>
+                    <span class="text-sm text-gray-600">{{ user.email }}</span>
+                </div>
                 <a href="{% url 'account_logout' %}" class="flex items-center px-4 py-3 text-red-600 rounded-lg hover:bg-red-100">
                     <i data-lucide="log-out" class="w-5 h-5"></i>
                     <span class="ml-3">{% trans "Logout" %}</span>
@@ -109,23 +113,23 @@
                 <nav class="mt-6">
                     <div class="px-4 space-y-2">
                         <!-- Same navigation items as mobile menu -->
-                        <a href="{% url "home" %}" class="flex items-center px-4 py-3 text-white bg-primary rounded-lg">
+                        <a href="{% url "home" %}" class="flex items-center px-4 py-3 {% if request.resolver_match.url_name == 'home' %}text-white bg-primary{% else %}text-gray-700 hover:bg-gray-100{% endif %} rounded-lg">
                             <i data-lucide="home" class="w-5 h-5"></i>
                             <span class="ml-3">{% trans "Home" %}</span>
                         </a>
-                        <a href="#" class="flex items-center px-4 py-3 text-gray-700 rounded-lg hover:bg-gray-100">
+                        <a href="{% url "leaderboard" %}" class="flex items-center px-4 py-3 {% if request.resolver_match.url_name == 'leaderboard' %}text-white bg-primary{% else %}text-gray-700 hover:bg-gray-100{% endif %} rounded-lg">
                             <i data-lucide="trophy" class="w-5 h-5"></i>
                             <span class="ml-3">{% trans "Leaderboard" %}</span>
                         </a>
-                        <a href="#" class="flex items-center px-4 py-3 text-gray-700 rounded-lg hover:bg-gray-100">
+                        <a href="{% url "ratings" %}" class="flex items-center px-4 py-3 {% if request.resolver_match.url_name == 'ratings' %}text-white bg-primary{% else %}text-gray-700 hover:bg-gray-100{% endif %} rounded-lg">
                             <i data-lucide="star" class="w-5 h-5"></i>
                             <span class="ml-3">{% trans "Ratings" %}</span>
                         </a>
-                        <a href="#" class="flex items-center px-4 py-3 text-gray-700 rounded-lg hover:bg-gray-100">
+                        <a href="#" class="flex items-center px-4 py-3 {% if request.resolver_match.url_name == 'settings' %}text-white bg-primary{% else %}text-gray-700 hover:bg-gray-100{% endif %} rounded-lg">
                             <i data-lucide="settings" class="w-5 h-5"></i>
                             <span class="ml-3">{% trans "Settings" %}</span>
                         </a>
-                        <a href="#" class="flex items-center px-4 py-3 text-gray-700 rounded-lg hover:bg-gray-100">
+                        <a href="#" class="flex items-center px-4 py-3 {% if request.resolver_match.url_name == 'help' %}text-white bg-primary{% else %}text-gray-700 hover:bg-gray-100{% endif %} rounded-lg">
                             <i data-lucide="help-circle" class="w-5 h-5"></i>
                             <span class="ml-3">{% trans "Help" %}</span>
                         </a>
@@ -143,7 +147,18 @@
             </div>
         </div>
         <!-- Main Content -->
-        {% block dashboard_content %}{% endblock dashboard_content %}
+        <div class="flex-1 overflow-auto">
+            <!-- Desktop Header (hidden on mobile) -->
+            <header class="hidden lg:block bg-white shadow-sm">
+                <div class="flex items-center justify-between px-8 py-4">
+                    <div class="text-lg font-medium text-gray-800">{% trans "Welcome back" %}</div>
+                    <div class="flex items-center space-x-4">
+                        <span class="text-gray-600">{{ user.email }}</span>
+                    </div>
+                </div>
+            </header>
+            {% block dashboard_content %}{% endblock dashboard_content %}
+        </div>
     </div>
 </div>
 

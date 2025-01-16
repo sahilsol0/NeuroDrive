@@ -1,0 +1,193 @@
+{% extends "dashboard/base.html" %}
+{% load i18n %}
+
+{% block dashboard_title %}{% trans "Leaderboard" %}{% endblock dashboard_title %}
+
+{% block dashboard_content %}
+<main class="p-4 lg:p-8">
+    <div class="mb-6">
+        <div class="relative">
+            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <i data-lucide="search" class="h-5 w-5 text-gray-400"></i>
+            </div>
+            <input 
+                type="text" 
+                id="player-search"
+                class="block w-full pl-10 pr-3 py-4 border border-gray-300 rounded-full leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-primary focus:border-primary sm:text-sm"
+                placeholder="{% trans 'Search by Driver name or ID...' %}"
+            >
+        </div>
+    </div>
+    <!-- Stats Overview -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
+        <div class="p-4 lg:p-6 bg-white rounded-lg shadow-sm">
+            <h3 class="text-sm font-medium text-gray-500">{% trans "Total Drivers" %}</h3>
+            <div class="mt-2 flex items-baseline">
+                <p class="text-xl lg:text-2xl font-semibold text-gray-900">1,234</p>
+                <span class="ml-2 text-sm font-medium text-green-600">+5.2%</span>
+            </div>
+        </div>
+        <div class="p-4 lg:p-6 bg-white rounded-lg shadow-sm">
+            <h3 class="text-sm font-medium text-gray-500">{% trans "Active Drivers" %}</h3>
+            <div class="mt-2 flex items-baseline">
+                <p class="text-xl lg:text-2xl font-semibold text-gray-900">856</p>
+                <span class="ml-2 text-sm font-medium text-green-600">+3.1%</span>
+            </div>
+        </div>
+        <div class="p-4 lg:p-6 bg-white rounded-lg shadow-sm">
+            <h3 class="text-sm font-medium text-gray-500">{% trans "Average Rating" %}</h3>
+            <div class="mt-2 flex items-baseline">
+                <p class="text-xl lg:text-2xl font-semibold text-gray-900">1580</p>
+                <span class="ml-2 text-sm font-medium text-green-600">+12</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Leaderboard Table -->
+    <div class="mt-6 lg:mt-8 bg-white rounded-lg shadow-sm">
+        <div class="px-4 py-5 sm:px-6 border-b border-gray-200">
+            <h2 class="text-lg font-medium text-gray-800">{% trans "Global Rankings" %}</h2>
+            <p class="mt-1 text-sm text-gray-500">{% trans "Updated in real-time" %}</p>
+        </div>
+        
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            {% trans "Rank" %}
+                        </th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            {% trans "Driver" %}
+                        </th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            {% trans "Rating" %}
+                        </th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            {% trans "Rides" %}
+                        </th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            {% trans "Active Rate" %}
+                        </th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    {% for i in "12345"|make_list %}
+                    <tr class="searchable-row {% if forloop.counter == 1 %}bg-yellow-100{% elif forloop.counter == 2 %}bg-gray-100{% elif forloop.counter == 3 %}bg-amber-50{% endif %} hover:bg-blue-100 transition delay-150"
+                        data-player-name="Player {{ forloop.counter }}"
+                        data-player-id="{{ forloop.counter }}234">
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="text-sm font-medium text-gray-900">
+                                {% if forloop.counter == 1 %}
+                                    <i data-lucide="trophy" class="inline w-5 h-5 text-yellow-500"></i>
+                                {% elif forloop.counter == 2 %}
+                                    <i data-lucide="trophy" class="inline w-5 h-5 text-gray-400"></i>
+                                {% elif forloop.counter == 3 %}
+                                    <i data-lucide="trophy" class="inline w-5 h-5 text-amber-600"></i>
+                                {% else %}
+                                    {{ forloop.counter }}
+                                {% endif %}
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="flex items-center">
+                                <div class="flex-shrink-0 h-10 w-10">
+                                    <div class="h-10 w-10 rounded-full bg-gray-200"></div>
+                                </div>
+                                <div class="ml-4">
+                                    <div class="text-sm font-medium text-gray-900">Driver {{ forloop.counter }}</div>
+                                    <div class="text-sm text-gray-500">ID: #{{ forloop.counter }}234</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="text-sm text-gray-900">{{ forloop.counter|add:"1800" }}</div>
+                            <div class="text-sm text-green-600">+{{ forloop.counter|add:"12" }}</div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="text-sm text-gray-900">{{ forloop.counter|add:"85" }}</div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="text-sm text-gray-900">{{ forloop.counter|add:"65" }}%</div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Pagination -->
+        <div class="bg-white px-4 py-3 border-t border-gray-200 sm:px-6">
+            <div class="flex items-center justify-between">
+                <div class="flex-1 flex justify-between sm:hidden">
+                    <a href="#" class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                        {% trans "Previous" %}
+                    </a>
+                    <a href="#" class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                        {% trans "Next" %}
+                    </a>
+                </div>
+                <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+                    <div>
+                        <p class="text-sm text-gray-700">
+                            {% trans "Showing" %} <span class="font-medium">1</span> {% trans "to" %} <span class="font-medium">5</span> {% trans "of" %} <span class="font-medium">50</span> {% trans "results" %}
+                        </p>
+                    </div>
+                    <div>
+                        <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                            <a href="#" class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                                <span class="sr-only">{% trans "Previous" %}</span>
+                                <i data-lucide="chevron-left" class="h-5 w-5"></i>
+                            </a>
+                            <a href="#" class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">1</a>
+                            <a href="#" class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">2</a>
+                            <a href="#" class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">3</a>
+                            <span class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-gray-50 text-sm font-medium text-gray-700">...</span>
+                            <a href="#" class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">10</a>
+                            <a href="#" class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                                <span class="sr-only">{% trans "Next" %}</span>
+                                <i data-lucide="chevron-right" class="h-5 w-5"></i>
+                            </a>
+                        </nav>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const searchInput = document.getElementById('player-search');
+        const rows = document.querySelectorAll('.searchable-row');
+    
+        searchInput.addEventListener('input', function(e) {
+            const query = e.target.value.toLowerCase();
+            let visibleCount = 0;
+    
+            rows.forEach(row => {
+                const playerName = row.dataset.playerName.toLowerCase();
+                const playerId = row.dataset.playerId;
+                const matches = playerName.includes(query) || playerId.includes(query);
+                
+                row.classList.toggle('hidden', !matches);
+                
+                if (matches) {
+                    visibleCount++;
+                    // Update ranking numbers for visible rows
+                    const visibleRank = row.querySelector('.text-sm.font-medium.text-gray-900');
+                    if (visibleRank && !visibleRank.querySelector('i')) {  // Don't update if it has a trophy icon
+                        visibleRank.textContent = visibleCount;
+                    }
+                }
+            });
+    
+            // Update the results count in pagination
+            const resultsText = document.querySelector('.text-sm.text-gray-700');
+            if (resultsText) {
+                resultsText.innerHTML = `{% trans "Showing" %} <span class="font-medium">1</span> {% trans "to" %} <span class="font-medium">${visibleCount}</span> {% trans "of" %} <span class="font-medium">${rows.length}</span> {% trans "results" %}`;
+            }
+        });
+    });
+    </script>
+{% endblock dashboard_content %}

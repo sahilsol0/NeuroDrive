@@ -48,7 +48,7 @@
         <div>
           <label for="id_email" class="sr-only">{% trans "Email address" %}</label>
           <input id="id_email" name="email" type="email" autocomplete="email" required autofocus
-            class="relative block w-full rounded-full border-0 py-3 px-4 text-gray-900 ring-1 ring-inset {% if form.email.errors %}ring-red-500{% else %}ring-gray-300{% endif %} placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600"
+            class="relative block w-full rounded-full border-0 py-3 px-4 text-gray-900 ring-1 ring-inset {% if form.email.errors %}ring-red-500{% else %}ring-gray-300{% endif %} placeholder:text-gray-400 focus:outline-none focus:placeholder-gray-300 focus:ring-1 focus:ring-primary focus:border-primary"
             placeholder="{% trans 'Email address' %}">
           {% if form.email.errors %}
           <p class="mt-2 text-sm text-red-600">{{ form.email.errors.0 }}</p>
@@ -58,7 +58,7 @@
         <div>
           <label for="id_password1" class="sr-only">{% trans "Password" %}</label>
           <input id="id_password1" name="password1" type="password" autocomplete="new-password" required
-            class="relative block w-full rounded-full border-0 py-3 px-4 text-gray-900 ring-1 ring-inset {% if form.password1.errors %}ring-red-500{% else %}ring-gray-300{% endif %} placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600"
+            class="relative block w-full rounded-full border-0 py-3 px-4 text-gray-900 ring-1 ring-inset {% if form.password1.errors %}ring-red-500{% else %}ring-gray-300{% endif %} placeholder:text-gray-400 focus:outline-none focus:placeholder-gray-300 focus:ring-1 focus:ring-primary focus:border-primary"
             placeholder="{% trans 'Password' %}">
           {% if form.password1.errors %}
           <p class="mt-2 text-sm text-red-600">{{ form.password1.errors.0 }}</p>
@@ -68,7 +68,7 @@
         <div>
           <label for="id_password2" class="sr-only">{% trans "Password (again)" %}</label>
           <input id="id_password2" name="password2" type="password" autocomplete="new-password" required
-            class="relative block w-full rounded-full border-0 py-3 px-4 text-gray-900 ring-1 ring-inset {% if form.password2.errors %}ring-red-500{% else %}ring-gray-300{% endif %} placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600"
+            class="relative block w-full rounded-full border-0 py-3 px-4 text-gray-900 ring-1 ring-inset {% if form.password2.errors %}ring-red-500{% else %}ring-gray-300{% endif %} placeholder:text-gray-400 focus:outline-none focus:placeholder-gray-300 focus:ring-1 focus:ring-primary focus:border-primary"
             placeholder="{% trans 'Confirm Password' %}">
           {% if form.password2.errors %}
           <p class="mt-2 text-sm text-red-600">{{ form.password2.errors.0 }}</p>
