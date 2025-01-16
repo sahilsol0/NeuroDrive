@@ -1,0 +1,66 @@
+{% extends "dashboard/base.html" %}
+{% load i18n %}
+
+{% block dashboard_title %}{% trans "Home" %}{% endblock dashboard_title %}
+
+{% block dashboard_content %}
+<div class="flex-1 overflow-auto">
+    <!-- Desktop Header (hidden on mobile) -->
+    <header class="hidden lg:block bg-white shadow-sm">
+        <div class="flex items-center justify-between px-8 py-4">
+            <div class="text-lg font-medium text-gray-800">{% trans "Welcome back" %}</div>
+            <div class="flex items-center space-x-4">
+                <span class="text-gray-600">{{ user.email }}</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Dashboard Content -->
+    <main class="p-4 lg:p-8">
+        <!-- Stats Grid -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
+            <!-- Stats Cards -->
+            <div class="p-4 lg:p-6 bg-white rounded-lg shadow-sm">
+                <h3 class="text-sm font-medium text-gray-500">{% trans "Total Views" %}</h3>
+                <div class="mt-2 flex items-baseline">
+                    <p class="text-xl lg:text-2xl font-semibold text-gray-900">8,282</p>
+                    <span class="ml-2 text-sm font-medium text-green-600">+12.5%</span>
+                </div>
+            </div>
+            <div class="p-4 lg:p-6 bg-white rounded-lg shadow-sm">
+                <h3 class="text-sm font-medium text-gray-500">{% trans "Active Users" %}</h3>
+                <div class="mt-2 flex items-baseline">
+                    <p class="text-xl lg:text-2xl font-semibold text-gray-900">1,234</p>
+                    <span class="ml-2 text-sm font-medium text-green-600">+8.1%</span>
+                </div>
+            </div>
+            <div class="p-4 lg:p-6 bg-white rounded-lg shadow-sm">
+                <h3 class="text-sm font-medium text-gray-500">{% trans "Conversion Rate" %}</h3>
+                <div class="mt-2 flex items-baseline">
+                    <p class="text-xl lg:text-2xl font-semibold text-gray-900">15.3%</p>
+                    <span class="ml-2 text-sm font-medium text-green-600">+2.4%</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Activity Feed -->
+        <div class="mt-6 lg:mt-8 bg-white rounded-lg shadow-sm p-4 lg:p-6">
+            <h2 class="text-lg font-medium text-gray-800 mb-4">{% trans "Recent Activity" %}</h2>
+            <div class="space-y-4">
+                {% for i in "123"|make_list %}
+                <div class="flex items-center justify-between py-3 border-b border-gray-200 last:border-0">
+                    <div class="flex items-center space-x-4">
+                        <div class="w-8 h-8 lg:w-10 lg:h-10 rounded-full bg-gray-200"></div>
+                        <div>
+                            <p class="text-sm font-medium text-gray-900">{% trans "Activity" %} {{ forloop.counter }}</p>
+                            <p class="text-xs lg:text-sm text-gray-500">{% trans "Description of activity" %} {{ forloop.counter }}</p>
+                        </div>
+                    </div>
+                    <span class="text-xs lg:text-sm text-gray-500">{% trans "2h ago" %}</span>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </main>
+</div>
+{% endblock dashboard_content %}

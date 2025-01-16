@@ -8,4 +8,4 @@ class LandingView(View):
     
 @login_required()
 def home(request):
-    return render(request, "home.html", context={})
+    return render(request, "dashboard/home.html", context={})
