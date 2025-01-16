@@ -22,10 +22,10 @@ NeuroDrive is a driver behavior analysis and rating system designed to improve d
 - **Account Recovery**: Forgot username/password functionality.
 
 ## Technologies Used
-- **Frontend**: HTML, CSS, JavaScript (or React.js if applicable)
-- **Backend**: Django (or Flask/Node.js, depending on implementation)
-- **Database**: PostgreSQL or SQLite
-- **Authentication**: JWT/Session-based Authentication
+- **Frontend**: HTML, CSS, TailwindCSS
+- **Backend**: Django
+- **Database**: PostgreSQL
+- **Authentication**: Session-based Authentication
 
 ## Getting Started
 Follow these steps to set up the project locally.
@@ -39,4 +39,4 @@ Follow these steps to set up the project locally.
 1. Clone the repository:
    ```bash
    git clone https://github.com/username/neurodrive.git
-   cd neurodrive
+   cd NeuroDrive
