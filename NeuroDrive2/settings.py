@@ -160,8 +160,8 @@ LOGOUT_REDIRECT_URL = '/'
 SOCIALACCOUNT_PROVIDERS = {
     'google': {
         'APP': {
-            'client_id':'330844226902-d6flslosc091mbg7qo3sk227u8a3bhep.apps.googleusercontent.com',
-            'secret': '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',
+            'client_id': os.getenv('GOOGLE_CLIENT_ID'),
+            'secret': os.getenv('GOOGLE_SECRET'),
           
         },
         'SCOPE': ['profile','email',],
