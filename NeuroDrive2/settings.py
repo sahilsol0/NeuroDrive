@@ -31,6 +31,8 @@ INSTALLED_APPS = [
     'allauth',
     'allauth.account',
     'allauth.socialaccount',
+    'allauth.socialaccount.providers.google',
+
     'users',
 ]
 
@@ -154,3 +156,19 @@ DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 
 LOGIN_REDIRECT_URL = 'home'
 LOGOUT_REDIRECT_URL = '/'
+
+SOCIALACCOUNT_PROVIDERS = {
+    'google': {
+        'APP': {
+            'client_id':'330844226902-d6flslosc091mbg7qo3sk227u8a3bhep.apps.googleusercontent.com',
+            'secret': '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',
+          
+        },
+        'SCOPE': ['profile','email',],
+         'AUTH_PARAMS': {'access_type': 'online'},
+        'METHOD': 'oauth2',
+        'VERIFIED_EMAIL': True,
+    }
+}
+
+SOCIALACCOUNT_LOGIN_ON_GET = True

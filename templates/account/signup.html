@@ -1,5 +1,7 @@
 {% extends "base.html" %}
+{% load static %}
 {% load i18n %}
+{% load account socialaccount %}
 
 {% block head_title %}{% trans "Sign Up" %}{% endblock %}
 
@@ -18,17 +20,18 @@
       </p>
     </div>
 
-    {% if messages %}
-    <div class="space-y-2">
-      {% for message in messages %}
-      <div class="rounded-full p-4 {% if message.tags == 'error' %}bg-red-50{% elif message.tags == 'success' %}bg-green-50{% else %}bg-blue-50{% endif %}">
-        <p class="text-sm {% if message.tags == 'error' %}text-red-700{% elif message.tags == 'success' %}text-green-700{% else %}text-blue-700{% endif %}">
-          {{ message }}
-        </p>
-      </div>
-      {% endfor %}
+    <div class="flex justify-center">
+      <a href="{% provider_login_url 'google' %}" class="group flex w-full justify-center rounded-full py-3 px-4 bg-white text-sm font-semibold ring-1 ring-gray-300 text-gray-900 hover:text-gray-600">
+        <img src="{% static "vectors/g-logo.svg" %}" class="h-5 w-5 mr-2" alt="Google Logo">
+        {% trans "Sign up with Google" %}
+      </a>
     </div>
-    {% endif %}
+
+    <div class="relative flex py-2 items-center">
+      <div class="flex-grow border-t border-gray-300"></div>
+      <span class="px-4 text-sm text-gray-500">{% trans "OR" %}</span>
+      <div class="flex-grow border-t border-gray-300"></div>
+    </div>
 
     <form class="mt-8 space-y-6" method="POST" action="{% url 'account_signup' %}">
       {% csrf_token %}

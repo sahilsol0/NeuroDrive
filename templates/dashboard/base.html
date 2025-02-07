@@ -138,7 +138,14 @@
                     <div class="px-8 mt-8">
                         <hr class="border-gray-200">
                     </div>
+                    
                     <div class="px-4 mt-8">
+                        <a href="{% url 'account_set_password' %}" class="flex items-center px-4 py-3 text-blue-600 hover:bg-blue-100 rounded-lg">
+                            <i data-lucide="key" class="w-5 h-5"></i>
+                            <span class="ml-3">{% trans "Change Password" %}</span>
+                        </a>
+                    </div>
+                    <div class="px-4 mt-2">
                         <a href="{% url 'account_logout' %}" class="flex items-center px-4 py-3 text-red-600 hover:bg-red-100 rounded-lg">
                             <i data-lucide="log-out" class="w-5 h-5"></i>
                             <span class="ml-3">{% trans "Logout" %}</span>

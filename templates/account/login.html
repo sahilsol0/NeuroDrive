@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load static %}
 {% load i18n %}
 {% load account socialaccount %}
 
@@ -30,6 +31,19 @@
       {% endfor %}
     </div>
     {% endif %}
+
+    <div class="flex justify-center">
+      <a href="{% provider_login_url 'google' %}" class="group flex w-full justify-center rounded-full py-3 px-4 bg-white text-sm font-semibold ring-1 ring-gray-300 text-gray-900 active:ring-2 hover:ring-gray-900">
+        <img src="{% static "vectors/g-logo.svg" %}" class="h-5 w-5 mr-2" alt="Google Logo">
+        {% trans "Sign in with Google" %}
+      </a>
+    </div>
+
+    <div class="relative flex py-2 items-center">
+      <div class="flex-grow border-t border-gray-300"></div>
+      <span class="px-4 text-sm text-gray-500">{% trans "OR" %}</span>
+      <div class="flex-grow border-t border-gray-300"></div>
+    </div>
 
     <form class="mt-8 space-y-6" method="POST" action="{% url 'account_login' %}">
       {% csrf_token %}
