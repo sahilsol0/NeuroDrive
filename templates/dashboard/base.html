@@ -2,7 +2,8 @@
 {% load static %}
 {% load i18n %}
 
-{% block title %}Dashboard | {% block dashboard_title %}{% endblock dashboard_title %}{% endblock title %}
+{% block title %}{% trans "Dashboard" %} | {% block dashboard_title %}{% endblock dashboard_title %}{% endblock title %}
+{% block nav %}{% trans "For Drivers" %}{% endblock nav %}
 
 {% block content %}
 <div class="flex flex-col h-screen bg-gray-100">
@@ -140,7 +141,7 @@
                     <div class="px-4 mt-8">
                         <a href="{% url 'account_logout' %}" class="flex items-center px-4 py-3 text-red-600 hover:bg-red-100 rounded-lg">
                             <i data-lucide="log-out" class="w-5 h-5"></i>
-                            <span class="ml-3">Logout</span>
+                            <span class="ml-3">{% trans "Logout" %}</span>
                         </a>
                     </div>
                 </nav>

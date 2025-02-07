@@ -67,12 +67,12 @@
         </div>
       </div>
 
-      <div class="flex items-center justify-between">
-        <div class="flex items-center">
+      <div class="flex items-center justify-end">
+        {% comment %} <div class="flex items-center">
           <input id="remember" name="remember" type="checkbox"
             class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600">
           <label for="remember" class="ml-2 block text-sm text-gray-900">{% trans "Remember me" %}</label>
-        </div>
+        </div> {% endcomment %}
 
         <div class="text-sm">
           <a href="{% url 'account_reset_password' %}" class="font-medium text-indigo-600 hover:text-indigo-500">
