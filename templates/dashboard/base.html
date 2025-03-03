@@ -81,6 +81,10 @@
                         <i data-lucide="star" class="w-5 h-5"></i>
                         <span class="ml-3">{% trans "Ratings" %}</span>
                     </a>
+                    <a href="{% url "appointments" %}" class="flex items-center px-4 py-3 {% if request.resolver_match.url_name == 'appointments' %}text-white bg-primary{% else %}text-gray-700 hover:bg-gray-100{% endif %} rounded-lg">
+                        <i data-lucide="calendar" class="w-5 h-5"></i>
+                        <span class="ml-3">{% trans "Book Appointment" %}</span>
+                    </a>
                     <a href="#" class="flex items-center px-4 py-3 {% if request.resolver_match.url_name == 'settings' %}text-white bg-primary{% else %}text-gray-700 hover:bg-gray-100{% endif %} rounded-lg">
                         <i data-lucide="settings" class="w-5 h-5"></i>
                         <span class="ml-3">{% trans "Settings" %}</span>
@@ -126,13 +130,13 @@
                             <i data-lucide="star" class="w-5 h-5"></i>
                             <span class="ml-3">{% trans "Ratings" %}</span>
                         </a>
+                        <a href="{% url "appointments" %}" class="flex items-center px-4 py-3 {% if request.resolver_match.url_name == 'appointments' %}text-white bg-primary{% else %}text-gray-700 hover:bg-gray-100{% endif %} rounded-lg">
+                            <i data-lucide="calendar" class="w-5 h-5"></i>
+                            <span class="ml-3">{% trans "Book Appointment" %}</span>
+                        </a>
                         <a href="#" class="flex items-center px-4 py-3 {% if request.resolver_match.url_name == 'settings' %}text-white bg-primary{% else %}text-gray-700 hover:bg-gray-100{% endif %} rounded-lg">
                             <i data-lucide="settings" class="w-5 h-5"></i>
                             <span class="ml-3">{% trans "Settings" %}</span>
-                        </a>
-                        <a href="#" class="flex items-center px-4 py-3 {% if request.resolver_match.url_name == 'help' %}text-white bg-primary{% else %}text-gray-700 hover:bg-gray-100{% endif %} rounded-lg">
-                            <i data-lucide="help-circle" class="w-5 h-5"></i>
-                            <span class="ml-3">{% trans "Help" %}</span>
                         </a>
                     </div>
                     <div class="px-8 mt-8">

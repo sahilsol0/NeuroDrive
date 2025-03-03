@@ -1,0 +1,54 @@
+{% extends "dashboard/base.html" %}
+{% load i18n %}
+
+{% block dashboard_title %}{% trans "Verify Driver Registration" %}{% endblock dashboard_title %}
+
+{% block dashboard_content %}
+<main class="p-4 lg:p-8">
+    <div class="bg-white rounded-lg shadow-sm">
+        <div class="px-4 py-5 sm:px-6 border-b border-gray-200">
+            <h2 class="text-lg font-medium text-gray-800">{% trans "Verify Driver Registration" %}</h2>
+            <p class="mt-1 text-sm text-gray-500">{% trans "Please review the details before confirming." %}</p>
+        </div>
+        
+        <div class="p-4 sm:p-6">
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">{% trans "User" %}</label>
+                    <p class="mt-1 text-sm text-gray-900">{{ user.email }}</p>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">{% trans "License Number" %}</label>
+                    <p class="mt-1 text-sm text-gray-900">{{ driver_data.license_no }}</p>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">{% trans "Full Name" %}</label>
+                    <p class="mt-1 text-sm text-gray-900">{{ driver_data.full_name }}</p>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">{% trans "Date of Birth" %}</label>
+                    <p class="mt-1 text-sm text-gray-900">{{ driver_data.dob }}</p>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">{% trans "Address" %}</label>
+                    <p class="mt-1 text-sm text-gray-900">{{ driver_data.address }}</p>
+                </div>
+            </div>
+
+            <div class="pt-5">
+                <div class="flex justify-end">
+                    <a href="{% url 'register_driver' %}" class="bg-white py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                        {% trans "Back" %}
+                    </a>
+                    <form method="POST" action="{% url 'confirm_driver_registration' %}" class="ml-3">
+                        {% csrf_token %}
+                        <button type="submit" class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                            {% trans "Confirm Registration" %}
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+{% endblock dashboard_content %}
