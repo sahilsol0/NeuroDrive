@@ -6,30 +6,57 @@
 {% block dashboard_content %}
 <!-- Dashboard Content -->
 <main class="p-4 lg:p-8">
-    <!-- Stats Grid -->
+    <!-- Role-Specific Content -->
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
-        <!-- Stats Cards -->
-        <div class="p-4 lg:p-6 bg-white rounded-lg shadow-sm">
-            <h3 class="text-sm font-medium text-gray-500">{% trans "Total Rides" %}</h3>
-            <div class="mt-2 flex items-baseline">
-                <p class="text-xl lg:text-2xl font-semibold text-gray-900">8,282</p>
-                <span class="ml-2 text-sm font-medium text-green-600">+12.5%</span>
+        {% if user.is_superuser %}
+            <!-- Manager-Specific Stats -->
+            <div class="p-4 lg:p-6 bg-white rounded-lg shadow-sm">
+                <h3 class="text-sm font-medium text-gray-500">{% trans "Total Users" %}</h3>
+                <div class="mt-2 flex items-baseline">
+                    <p class="text-xl lg:text-2xl font-semibold text-gray-900">1,234</p>
+                    <span class="ml-2 text-sm font-medium text-green-600">+5.2%</span>
+                </div>
             </div>
-        </div>
-        <div class="p-4 lg:p-6 bg-white rounded-lg shadow-sm">
-            <h3 class="text-sm font-medium text-gray-500">{% trans "Active Users" %}</h3>
-            <div class="mt-2 flex items-baseline">
-                <p class="text-xl lg:text-2xl font-semibold text-gray-900">1,234</p>
-                <span class="ml-2 text-sm font-medium text-green-600">+8.1%</span>
+            <div class="p-4 lg:p-6 bg-white rounded-lg shadow-sm">
+                <h3 class="text-sm font-medium text-gray-500">{% trans "Total Drivers" %}</h3>
+                <div class="mt-2 flex items-baseline">
+                    <p class="text-xl lg:text-2xl font-semibold text-gray-900">456</p>
+                    <span class="ml-2 text-sm font-medium text-green-600">+3.8%</span>
+                </div>
             </div>
-        </div>
-        <div class="p-4 lg:p-6 bg-white rounded-lg shadow-sm">
-            <h3 class="text-sm font-medium text-gray-500">{% trans "Conversion Rate" %}</h3>
-            <div class="mt-2 flex items-baseline">
-                <p class="text-xl lg:text-2xl font-semibold text-gray-900">15.3%</p>
-                <span class="ml-2 text-sm font-medium text-green-600">+2.4%</span>
+        {% elif user.is_driver %}
+            <!-- Driver-Specific Stats -->
+            <div class="p-4 lg:p-6 bg-white rounded-lg shadow-sm">
+                <h3 class="text-sm font-medium text-gray-500">{% trans "Completed Rides" %}</h3>
+                <div class="mt-2 flex items-baseline">
+                    <p class="text-xl lg:text-2xl font-semibold text-gray-900">128</p>
+                    <span class="ml-2 text-sm font-medium text-green-600">+12.5%</span>
+                </div>
             </div>
-        </div>
+            <div class="p-4 lg:p-6 bg-white rounded-lg shadow-sm">
+                <h3 class="text-sm font-medium text-gray-500">{% trans "Earnings" %}</h3>
+                <div class="mt-2 flex items-baseline">
+                    <p class="text-xl lg:text-2xl font-semibold text-gray-900">$2,340</p>
+                    <span class="ml-2 text-sm font-medium text-green-600">+8.1%</span>
+                </div>
+            </div>
+        {% else %}
+            <!-- Passenger-Specific Stats -->
+            <div class="p-4 lg:p-6 bg-white rounded-lg shadow-sm">
+                <h3 class="text-sm font-medium text-gray-500">{% trans "Total Rides" %}</h3>
+                <div class="mt-2 flex items-baseline">
+                    <p class="text-xl lg:text-2xl font-semibold text-gray-900">45</p>
+                    <span class="ml-2 text-sm font-medium text-green-600">+12.5%</span>
+                </div>
+            </div>
+            <div class="p-4 lg:p-6 bg-white rounded-lg shadow-sm">
+                <h3 class="text-sm font-medium text-gray-500">{% trans "Active Bookings" %}</h3>
+                <div class="mt-2 flex items-baseline">
+                    <p class="text-xl lg:text-2xl font-semibold text-gray-900">2</p>
+                    <span class="ml-2 text-sm font-medium text-green-600">+2.4%</span>
+                </div>
+            </div>
+        {% endif %}
     </div>
 
     <!-- Activity Feed -->

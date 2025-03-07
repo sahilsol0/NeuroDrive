@@ -3,7 +3,12 @@
 {% load i18n %}
 
 {% block title %}{% trans "Dashboard" %} | {% block dashboard_title %}{% endblock dashboard_title %}{% endblock title %}
-{% block nav %}{% trans "For Drivers" %}{% endblock nav %}
+{% block nav %}
+{% if user.is_superuser %} {% trans "For Managers" %}
+{% elif user.is_driver %} {% trans "For Drivers" %}
+{% else %} {% trans "For Passengers" %}
+{% endif %}
+{% endblock nav %}
 
 {% block content %}
 <div class="flex flex-col h-screen bg-gray-100">
@@ -130,14 +135,23 @@
                             <i data-lucide="star" class="w-5 h-5"></i>
                             <span class="ml-3">{% trans "Ratings" %}</span>
                         </a>
-                        <a href="{% url "appointments" %}" class="flex items-center px-4 py-3 {% if request.resolver_match.url_name == 'appointments' %}text-white bg-primary{% else %}text-gray-700 hover:bg-gray-100{% endif %} rounded-lg">
-                            <i data-lucide="calendar" class="w-5 h-5"></i>
-                            <span class="ml-3">{% trans "Book Appointment" %}</span>
-                        </a>
-                        <a href="#" class="flex items-center px-4 py-3 {% if request.resolver_match.url_name == 'settings' %}text-white bg-primary{% else %}text-gray-700 hover:bg-gray-100{% endif %} rounded-lg">
-                            <i data-lucide="settings" class="w-5 h-5"></i>
-                            <span class="ml-3">{% trans "Settings" %}</span>
-                        </a>
+                        {% if user.is_superuser %}
+                            <a href="{% url "register_driver" %}" class="flex items-center px-4 py-3 {% if request.resolver_match.url_name == 'register_driver' %}text-white bg-primary{% else %}text-gray-700 hover:bg-gray-100{% endif %} rounded-lg">
+                                <i data-lucide="user-round-plus" class="w-5 h-5"></i>
+                                <span class="ml-3">{% trans "Add New Driver" %}</span>
+                            </a>
+                            <a href="{% url 'driver_list' %}" class="flex items-center px-4 py-3 {% if request.resolver_match.url_name == 'driver_list' %}text-white bg-primary{% else %}text-gray-700 hover:bg-gray-100{% endif %} rounded-lg">
+                                <i data-lucide="users" class="w-5 h-5"></i>
+                                <span class="ml-3">{% trans "Driver List" %}</span>
+                            </a>
+                        {% elif user.is_driver %}
+                            <a href="{% url "appointments" %}" class="flex items-center px-4 py-3 {% if request.resolver_match.url_name == 'appointments' %}text-white bg-primary{% else %}text-gray-700 hover:bg-gray-100{% endif %} rounded-lg">
+                                <i data-lucide="calendar" class="w-5 h-5"></i>
+                                <span class="ml-3">{% trans "Book Appointment" %}</span>
+                            </a>
+                        {% else %}
+                            
+                        {% endif %}
                     </div>
                     <div class="px-8 mt-8">
                         <hr class="border-gray-200">
@@ -163,7 +177,19 @@
             <!-- Desktop Header (hidden on mobile) -->
             <header class="hidden lg:block bg-white shadow-sm">
                 <div class="flex items-center justify-between px-8 py-4">
-                    <div class="text-lg font-medium text-gray-800">{% trans "Welcome back" %}</div>
+                    <!-- Welcome Message Based on Role -->
+                    <div class="mb-8">
+                        {% if user.is_superuser %}
+                            <h1 class="text-2xl font-medium">{% trans "Welcome, Manager!" %}</h1>
+                            <p class="text-gray-600">{% trans "You have full access to manage the system." %}</p>
+                        {% elif user.is_driver %}
+                            <h1 class="text-2xl font-medium">{% trans "Welcome, Driver!" %}</h1>
+                            <p class="text-gray-600">{% trans "Manage your rides and appointments here." %}</p>
+                        {% else %}
+                            <h1 class="text-2xl font-medium">{% trans "Welcome, Passenger!" %}</h1>
+                            <p class="text-gray-600">{% trans "Book rides and view your history here." %}</p>
+                        {% endif %}
+                    </div>
                     <div class="flex items-center space-x-4">
                         <span class="text-gray-600">{{ user.email }}</span>
                     </div>

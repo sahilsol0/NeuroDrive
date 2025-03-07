@@ -8,7 +8,7 @@
     <!-- Registration Form -->
     <div class="bg-white rounded-lg shadow-sm">
         <div class="px-4 py-5 sm:px-6 border-b border-gray-200">
-            <h2 class="text-lg font-medium text-gray-800">{% trans "Register as a Driver" %}</h2>
+            <h2 class="text-lg font-medium text-gray-800">{% trans "Register a new Driver" %}</h2>
             <p class="mt-1 text-sm text-gray-500">{% trans "Provide driver information to complete registration" %}</p>
         </div>
         
@@ -75,7 +75,7 @@
         const userIdInput = document.getElementById('user_id');
         const userError = document.getElementById('user_error');
 
-        // Function to fetch and display matching users
+        // Function to fetch and display matching users who are not drivers
         const fetchUsers = async (query) => {
             if (query.length < 2) {
                 userResultsContainer.innerHTML = '';
@@ -83,7 +83,8 @@
                 return;
             }
 
-            const response = await fetch(`/search-users/?query=${encodeURIComponent(query)}`);
+            // Fetch users who are not drivers
+            const response = await fetch(`/search-users/?query=${encodeURIComponent(query)}&exclude_drivers=true`);
             const users = await response.json();
 
             if (users.length > 0) {

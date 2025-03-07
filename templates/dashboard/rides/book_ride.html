@@ -1,0 +1,165 @@
+{% extends "dashboard/base.html" %}
+{% load i18n %}
+
+{% block dashboard_title %}{% trans "Book a Ride" %}{% endblock dashboard_title %}
+
+{% block dashboard_content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="max-w-2xl mx-auto bg-white shadow-md rounded-lg overflow-hidden">
+        <div class="p-6">
+            <h2 class="text-2xl font-bold text-gray-800 mb-6">{% trans "Book Your Ride" %}</h2>
+            
+            <form method="post" class="space-y-6">
+                {% csrf_token %}
+                
+                {% if form.non_field_errors %}
+                <div class="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded relative" role="alert">
+                    {% for error in form.non_field_errors %}
+                        <p>{{ error }}</p>
+                    {% endfor %}
+                </div>
+                {% endif %}
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label for="{{ form.pickup_location.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                            {% trans "Pickup Location" %}
+                        </label>
+                        {{ form.pickup_location }}
+                        {% if form.pickup_location.errors %}
+                        <p class="mt-2 text-sm text-red-600">
+                            {% for error in form.pickup_location.errors %}
+                                {{ error }}
+                            {% endfor %}
+                        </p>
+                        {% endif %}
+                    </div>
+
+                    <div>
+                        <label for="{{ form.dropoff_location.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                            {% trans "Dropoff Location" %}
+                        </label>
+                        {{ form.dropoff_location }}
+                        {% if form.dropoff_location.errors %}
+                        <p class="mt-2 text-sm text-red-600">
+                            {% for error in form.dropoff_location.errors %}
+                                {{ error }}
+                            {% endfor %}
+                        </p>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label for="{{ form.pickup_date.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                            {% trans "Pickup Date" %}
+                        </label>
+                        {{ form.pickup_date }}
+                        {% if form.pickup_date.errors %}
+                        <p class="mt-2 text-sm text-red-600">
+                            {% for error in form.pickup_date.errors %}
+                                {{ error }}
+                            {% endfor %}
+                        </p>
+                        {% endif %}
+                    </div>
+
+                    <div>
+                        <label for="{{ form.pickup_time.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                            {% trans "Pickup Time" %}
+                        </label>
+                        {{ form.pickup_time }}
+                        {% if form.pickup_time.errors %}
+                        <p class="mt-2 text-sm text-red-600">
+                            {% for error in form.pickup_time.errors %}
+                                {{ error }}
+                            {% endfor %}
+                        </p>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div>
+                    <label for="{{ form.ride_type.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                        {% trans "Ride Type" %}
+                    </label>
+                    {{ form.ride_type }}
+                    {% if form.ride_type.errors %}
+                    <p class="mt-2 text-sm text-red-600">
+                        {% for error in form.ride_type.errors %}
+                            {{ error }}
+                        {% endfor %}
+                    </p>
+                    {% endif %}
+                </div>
+
+                <div>
+                    <label for="{{ form.special_requirements.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                        {% trans "Special Requirements" %}
+                    </label>
+                    {{ form.special_requirements }}
+                    {% if form.special_requirements.errors %}
+                    <p class="mt-2 text-sm text-red-600">
+                        {% for error in form.special_requirements.errors %}
+                            {{ error }}
+                        {% endfor %}
+                    </p>
+                    {% endif %}
+                </div>
+
+                <div class="bg-gray-50 p-4 rounded-md">
+                    <div class="flex justify-between items-center">
+                        <span class="text-sm font-medium text-gray-700">{% trans "Estimated Fare" %}</span>
+                        <span id="estimated_fare" class="text-lg font-semibold text-blue-600">$0.00</span>
+                    </div>
+                    <p class="text-xs text-gray-500 mt-1">{% trans "Actual fare may vary" %}</p>
+                </div>
+
+                <div class="flex justify-end space-x-4">
+                    <a href="{% url 'my_rides' %}" class="btn btn-secondary">
+                        {% trans "Cancel" %}
+                    </a>
+                    <button type="submit" class="btn btn-primary">
+                        {% trans "Book Ride" %}
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const pickupLocationInput = document.getElementById('id_pickup_location');
+    const dropoffLocationInput = document.getElementById('id_dropoff_location');
+    const rideTypeSelect = document.getElementById('id_ride_type');
+    const estimatedFareElement = document.getElementById('estimated_fare');
+
+    function updateEstimatedFare() {
+        const pickupLocation = pickupLocationInput.value;
+        const dropoffLocation = dropoffLocationInput.value;
+        const rideType = rideTypeSelect.value;
+
+        fetch("{% url 'estimate_fare' %}", {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: `pickup_location=${pickupLocation}&dropoff_location=${dropoffLocation}&ride_type=${rideType}`
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                estimatedFareElement.textContent = `$${data.estimated_fare}`;
+            }
+        });
+    }
+
+    pickupLocationInput.addEventListener('input', updateEstimatedFare);
+    dropoffLocationInput.addEventListener('input', updateEstimatedFare);
+    rideTypeSelect.addEventListener('change', updateEstimatedFare);
+});
+</script>
+{% endblock dashboard_content %}

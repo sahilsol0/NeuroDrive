@@ -1,0 +1,87 @@
+{% extends "dashboard/base.html" %}
+{% load i18n %}
+
+{% block dashboard_title %}{% trans "Driver List" %}{% endblock dashboard_title %}
+
+{% block dashboard_content %}
+<main class="p-4 lg:p-8">
+    <div class="bg-white rounded-lg shadow-sm">
+        <div class="px-4 py-5 sm:px-6 border-b border-gray-200">
+            <h2 class="text-lg font-medium text-gray-800">{% trans "Driver List" %}</h2>
+            <p class="mt-1 text-sm text-gray-500">{% trans "List of all registered drivers." %}</p>
+        </div>
+        
+        <!-- Search Input Field -->
+        <div class="p-4 sm:p-6">
+            <input type="text" id="driver_search" class="w-full p-2 border border-gray-300 rounded-md" placeholder="{% trans 'Search by name, license number, or email...' %}">
+        </div>
+
+        <div class="p-4 sm:p-6">
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{% trans "Full Name" %}</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{% trans "License No" %}</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{% trans "Date of Birth" %}</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{% trans "Address" %}</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{% trans "Actions" %}</th>
+                        </tr>
+                    </thead>
+                    <tbody id="driver_table_body" class="bg-white divide-y divide-gray-200">
+                        {% for driver in drivers %}
+                        <tr>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ driver.full_name }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ driver.license_no }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ driver.dob }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ driver.address }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                <a href="{% url 'driver_update' driver.pk %}" class="text-blue-600 hover:text-blue-900">{% trans "Edit" %}</a>
+                                <a href="{% url 'driver_delete' driver.pk %}" class="ml-2 text-red-600 hover:text-red-900">{% trans "Delete" %}</a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</main>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const driverSearchInput = document.getElementById('driver_search');
+        const driverTableBody = document.getElementById('driver_table_body');
+
+        // Function to fetch and display matching drivers
+        const fetchDrivers = async (query) => {
+            const response = await fetch(`/search-drivers/?query=${encodeURIComponent(query)}`);
+            const drivers = await response.json();
+
+            // Clear the table body
+            driverTableBody.innerHTML = '';
+
+            // Populate the table with the filtered drivers
+            drivers.forEach(driver => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${driver.full_name}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${driver.license_no}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${driver.dob}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${driver.address}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        <a href="/driver/update/${driver.id}/" class="text-blue-600 hover:text-blue-900">{% trans "Edit" %}</a>
+                        <a href="/driver/delete/${driver.id}/" class="ml-2 text-red-600 hover:text-red-900">{% trans "Delete" %}</a>
+                    </td>
+                `;
+                driverTableBody.appendChild(row);
+            });
+        };
+
+        // Event listener for driver search input
+        driverSearchInput.addEventListener('input', function(e) {
+            fetchDrivers(e.target.value);
+        });
+    });
+</script>
+{% endblock dashboard_content %}

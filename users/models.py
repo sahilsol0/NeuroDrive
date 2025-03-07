@@ -1,6 +1,7 @@
+import random
 from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.db import models
-
+from django.db.models import Q
 from django.db.models.signals import post_save, pre_delete, post_delete
 from django.dispatch import receiver
 
@@ -104,3 +105,102 @@ class Appointment(models.Model):
 
     def is_for_driver(self):
         return self.appointment_type == 'upgrade'
+    
+class Ride(models.Model):
+    RIDE_STATUS_CHOICES = (
+        ('requested', 'Requested'),
+        ('assigned', 'Driver Assigned'),
+        ('in_progress', 'In Progress'),
+        ('completed', 'Completed'),
+        ('cancelled', 'Cancelled')
+    )
+
+    RIDE_TYPE_CHOICES = (
+        ('standard', 'Standard'),
+        ('shared', 'Shared Ride'),
+        ('premium', 'Premium')
+    )
+    
+    ride_type = models.CharField(
+        max_length=20, 
+        choices=RIDE_TYPE_CHOICES, 
+        default='standard'
+    )
+    special_requirements = models.TextField(
+        blank=True, 
+        null=True
+    )
+
+    passenger = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='passenger_rides')
+    driver = models.ForeignKey(Driver, on_delete=models.SET_NULL, null=True, blank=True, related_name='driver_rides')
+    
+    pickup_location = models.CharField(max_length=255)
+    dropoff_location = models.CharField(max_length=255)
+    
+    pickup_time = models.DateTimeField()
+    estimated_arrival_time = models.DateTimeField(null=True, blank=True)
+    
+    status = models.CharField(max_length=20, choices=RIDE_STATUS_CHOICES, default='requested')
+    
+    fare = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"Ride from {self.pickup_location} to {self.dropoff_location}"
+
+    def assign_random_driver(self):
+        """
+        Assign a random available driver to the ride.
+        A driver is considered available if:
+        1. They are not currently on an active ride
+        2. They have an active driver profile
+        """
+        # Find drivers who are not currently on an active ride
+        active_ride_drivers = Ride.objects.filter(
+            Q(status__in=['assigned', 'in_progress']) & 
+            Q(driver__isnull=False)
+        ).values_list('driver_id', flat=True)
+
+        # Get available drivers (those with driver profiles who are not on active rides)
+        available_drivers = Driver.objects.exclude(id__in=active_ride_drivers)
+
+        if available_drivers.exists():
+            # Randomly select a driver
+            selected_driver = random.choice(available_drivers)
+            self.driver = selected_driver
+            self.status = 'assigned'
+            self.save()
+            return selected_driver
+        
+        return None
+
+class RideReview(models.Model):
+    ride = models.OneToOneField(Ride, on_delete=models.CASCADE, related_name='review')
+    passenger_rating = models.IntegerField(choices=[(i, i) for i in range(1, 6)])
+    driver_rating = models.IntegerField(choices=[(i, i) for i in range(1, 6)])
+    passenger_comment = models.TextField(blank=True, null=True)
+    driver_comment = models.TextField(blank=True, null=True)
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Review for Ride {self.ride_id}"
+
+# Helper method to book a ride
+def book_ride(passenger, pickup_location, dropoff_location, pickup_time):
+    """
+    Helper function to book a ride and automatically assign a driver
+    """
+    ride = Ride.objects.create(
+        passenger=passenger,
+        pickup_location=pickup_location,
+        dropoff_location=dropoff_location,
+        pickup_time=pickup_time
+    )
+    
+    # Attempt to assign a random driver
+    ride.assign_random_driver()
+    
+    return ride

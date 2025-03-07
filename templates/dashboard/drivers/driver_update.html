@@ -1,0 +1,110 @@
+{% extends "dashboard/base.html" %}
+{% load i18n %}
+
+{% block dashboard_title %}{% trans "Update Driver Information" %}{% endblock dashboard_title %}
+
+{% block dashboard_content %}
+<main class="p-4 lg:p-8">
+    <!-- Update Form -->
+    <div class="bg-white rounded-lg shadow-sm">
+        <div class="px-4 py-5 sm:px-6 border-b border-gray-200">
+            <h2 class="text-lg font-medium text-gray-800">{% trans "Update Driver Information" %}</h2>
+            <p class="mt-1 text-sm text-gray-500">{% trans "Update the driver's details below." %}</p>
+        </div>
+        
+        <div class="p-4 sm:p-6">
+            <!-- Display Driver's Email -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700">{% trans "Driver's Email" %}</label>
+                <p class="mt-1 text-sm text-gray-900">{{ driver_email }}</p>
+            </div>
+
+            <form method="POST" class="space-y-6">
+                {% csrf_token %}
+                
+                <!-- License Number -->
+                <div>
+                    <label for="id_license_no" class="block text-sm font-medium text-gray-700">{% trans "License Number" %}</label>
+                    <input type="text" name="license_no" id="id_license_no" value="{{ form.license_no.value }}" required class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="SS-RRYYYYNNNNNNN">
+                    <p class="mt-2 text-sm text-gray-500">{% trans "Format: SS-RRYYYYNNNNNNN (e.g., DL-0120231234567)" %}</p>
+                    {% if form.license_no.errors %}
+                        <p class="mt-2 text-sm text-red-600">{{ form.license_no.errors }}</p>
+                    {% endif %}
+                </div>
+
+                <!-- Full Name -->
+                <div>
+                    <label for="id_full_name" class="block text-sm font-medium text-gray-700">{% trans "Full Name" %}</label>
+                    <input type="text" name="full_name" id="id_full_name" value="{{ form.full_name.value }}" required class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                    {% if form.full_name.errors %}
+                        <p class="mt-2 text-sm text-red-600">{{ form.full_name.errors }}</p>
+                    {% endif %}
+                </div>
+
+                <!-- Date of Birth -->
+                <div>
+                    <label for="id_dob" class="block text-sm font-medium text-gray-700">{% trans "Date of Birth" %}</label>
+                    <input type="date" name="dob" id="id_dob" value="{{ form.dob.value|date:'Y-m-d' }}" required class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                    <p class="mt-2 text-sm text-gray-500">{% trans "You must be at least 18 years old to register as a driver." %}</p>
+                    {% if form.dob.errors %}
+                        <p class="mt-2 text-sm text-red-600">{{ form.dob.errors }}</p>
+                    {% endif %}
+                </div>
+
+                <!-- Address -->
+                <div>
+                    <label for="id_address" class="block text-sm font-medium text-gray-700">{% trans "Address" %}</label>
+                    <textarea id="id_address" name="address" rows="3" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="{% trans 'Enter your address' %}">{{ form.address.value }}</textarea>
+                    {% if form.address.errors %}
+                        <p class="mt-2 text-sm text-red-600">{{ form.address.errors }}</p>
+                    {% endif %}
+                </div>
+
+                <!-- Form Actions -->
+                <div class="pt-5">
+                    <div class="flex justify-end">
+                        <a href="{% url 'driver_list' %}" class="bg-white py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                            {% trans "Cancel" %}
+                        </a>
+                        <button type="submit" class="ml-3 inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                            {% trans "Update" %}
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</main>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Date of Birth validation
+        const dobInput = document.getElementById('id_dob');
+        const today = new Date();
+        const minAge = 18;
+        const minDate = new Date(today.getFullYear() - minAge, today.getMonth(), today.getDate());
+        const formattedMinDate = `${minDate.getFullYear()}-${String(minDate.getMonth() + 1).padStart(2, '0')}-${String(minDate.getDate()).padStart(2, '0')}`;
+        dobInput.max = formattedMinDate;
+
+        dobInput.addEventListener('change', function(e) {
+            const selectedDate = new Date(e.target.value);
+            if (selectedDate > minDate) {
+                alert('{% trans "You must be at least 18 years old to register as a driver." %}');
+                dobInput.value = '';
+            }
+        });
+
+        // License Number validation
+        const licenseInput = document.getElementById('id_license_no');
+        const licenseRegex = /^[A-Za-z]{2}-\d{2}\d{4}\d{7}$/;
+
+        licenseInput.addEventListener('input', function(e) {
+            if (!licenseRegex.test(e.target.value)) {
+                licenseInput.setCustomValidity('{% trans "Invalid license number format. Please follow the format SS-RRYYYYNNNNNNN." %}');
+            } else {
+                licenseInput.setCustomValidity('');
+            }
+        });
+    });
+</script>
+{% endblock dashboard_content %}

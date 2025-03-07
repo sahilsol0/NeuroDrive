@@ -1,13 +1,19 @@
-from datetime import datetime, timedelta
 import re
+from datetime import datetime, timedelta
+from django.utils import timezone
 from django.http import JsonResponse
 from django.db.models import Q
-from django.shortcuts import render, redirect
+from django.shortcuts import get_object_or_404, render, redirect
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.views import View
 from django.contrib import messages
 from django.core.exceptions import PermissionDenied
-from users.models import Appointment, CustomUser, Driver
+from users.forms import DriverUpdateForm, RideBookingForm
+from users.models import Appointment, CustomUser, Driver, Ride
+from django.views.generic import ListView, UpdateView, DeleteView
+from django.urls import reverse_lazy
+from django.shortcuts import render
+from django.db.models import Count, Avg
 
 # Check if the user is an admin
 def is_admin(user):
@@ -23,7 +29,20 @@ def home(request):
 
 @login_required()
 def leaderboard(request):
-    return render(request, "dashboard/leaderboard.html", context={})
+    # Fetch drivers with their ratings, number of rides, and active rate
+    drivers = Driver.objects.annotate(
+        total_rides=Count('driver_rides', filter=Q(driver_rides__status='completed')),
+        avg_rating=Avg('driver_rides__review__driver_rating'),
+    ).order_by('-avg_rating')  # Sort by average rating (highest first)
+
+    # Add ranking to each driver
+    for index, driver in enumerate(drivers, start=1):
+        driver.rank = index
+
+    context = {
+        'drivers': drivers,
+    }
+    return render(request, 'dashboard/leaderboard.html', context)
 
 @login_required()
 def ratings(request):
@@ -75,7 +94,7 @@ def register_driver(request):
 
     # Fetch all users who are not already drivers
     users = CustomUser.objects.filter(is_driver=False)
-    return render(request, 'dashboard/register_driver.html', {'users': users})
+    return render(request, 'dashboard/drivers/register_driver.html', {'users': users})
 
 @login_required
 @user_passes_test(is_admin)
@@ -91,7 +110,7 @@ def verify_driver_registration(request):
         messages.error(request, 'Selected user does not exist.')
         return redirect('register_driver')
 
-    return render(request, 'dashboard/verify_driver.html', {
+    return render(request, 'dashboard/drivers/verify_driver.html', {
         'user': user,
         'driver_data': driver_data,
     })
@@ -145,13 +164,196 @@ def confirm_driver_registration(request):
 @login_required
 @user_passes_test(is_admin)
 def success_driver_registration(request):
-    return render(request, 'dashboard/success_driver.html')
+    return render(request, 'dashboard/drivers/success_driver.html')
+
 
 @login_required
 @user_passes_test(is_admin)
 def search_users(request):
     query = request.GET.get('query', '')
+    exclude_drivers = request.GET.get('exclude_drivers', 'false').lower() == 'true'
+
     users = CustomUser.objects.filter(
-        Q(email__icontains=query) | Q(first_name__icontains=query) | Q(last_name__icontains=query)
-    ).values('id', 'email', 'first_name', 'last_name')[:10]  # Limit to 10 results
-    return JsonResponse(list(users), safe=False)
+        Q(email__icontains=query) | 
+        Q(first_name__icontains=query) | 
+        Q(last_name__icontains=query)
+    )
+
+    if exclude_drivers:
+        users = users.filter(is_driver=False)
+
+    user_list = [
+        {
+            'id': user.id,
+            'email': user.email,
+            'first_name': user.first_name,
+            'last_name': user.last_name,
+        }
+        for user in users
+    ]
+
+    return JsonResponse(user_list, safe=False)
+
+def search_drivers(request):
+    query = request.GET.get('query', '')
+
+    # Filter drivers based on the search query
+    drivers = Driver.objects.filter(
+        Q(full_name__icontains=query) | 
+        Q(license_no__icontains=query) | 
+        Q(user__email__icontains=query)
+    )
+
+    driver_list = [
+        {
+            'id': driver.id,
+            'full_name': driver.full_name,
+            'license_no': driver.license_no,
+            'dob': driver.dob.strftime('%Y-%m-%d'),  # Format date as string
+            'address': driver.address,
+        }
+        for driver in drivers
+    ]
+
+    return JsonResponse(driver_list, safe=False)
+
+class DriverListView(ListView):
+    model = Driver
+    template_name = 'dashboard/drivers/driver_list.html'
+    context_object_name = 'drivers'
+
+class DriverUpdateView(UpdateView):
+    model = Driver
+    form_class = DriverUpdateForm
+    template_name = 'dashboard/drivers/driver_update.html'
+    success_url = reverse_lazy('driver_list')
+
+    def get_context_data(self, **kwargs):
+        # Call the base implementation first to get the context
+        context = super().get_context_data(**kwargs)
+        # Add the driver's email to the context
+        context['driver_email'] = self.object.user.email
+        return context
+
+class DriverDeleteView(DeleteView):
+    model = Driver
+    template_name = 'dashboard/drivers/driver_confirm_delete.html'
+    success_url = reverse_lazy('driver_list')
+
+@login_required
+def book_ride_view(request):
+    """
+    View to handle ride booking
+    """
+    if request.method == 'POST':
+        form = RideBookingForm(request.POST)
+        if form.is_valid():
+            # Create ride instance
+            ride = form.save(commit=False)
+            ride.passenger = request.user
+            
+            # Combine date and time into a naive datetime object
+            pickup_datetime = datetime.combine(
+                form.cleaned_data['pickup_date'], 
+                form.cleaned_data['pickup_time']
+            )
+            # Make the datetime object timezone-aware
+            ride.pickup_time = timezone.make_aware(pickup_datetime)
+            
+            # Save the ride
+            ride.save()
+            
+            # Attempt to assign a driver
+            try:
+                ride.assign_random_driver()
+            except Exception as e:
+                messages.warning(request, f"Could not assign a driver: {str(e)}")
+            
+            messages.success(request, "Ride booked successfully!")
+            return redirect('my_rides')
+        else:
+            messages.error(request, "Please correct the errors in the form.")
+    else:
+        form = RideBookingForm()
+    
+    return render(request, 'dashboard/rides/book_ride.html', {
+        'form': form,
+        'recent_rides': Ride.objects.filter(passenger=request.user).order_by('-created_at')[:5]
+    })
+
+@login_required
+def my_rides_view(request):
+    """
+    View to show user's ride history
+    """
+    rides = Ride.objects.filter(passenger=request.user).order_by('-created_at')
+    return render(request, 'dashboard/rides/my_rides.html', {
+        'rides': rides
+    })
+
+@login_required
+def ride_details_view(request, ride_id):
+    """
+    View to show details of a specific ride
+    """
+    ride = get_object_or_404(Ride, id=ride_id, passenger=request.user)
+    return render(request, 'dashboard/rides/ride_details.html', {
+        'ride': ride
+    })
+
+@login_required
+def cancel_ride_view(request, ride_id):
+    """
+    View to cancel a ride
+    """
+    ride = get_object_or_404(Ride, id=ride_id, passenger=request.user)
+    
+    # Only allow cancellation of pending or upcoming rides
+    if ride.status in ['requested', 'assigned']:
+        ride.status = 'cancelled'
+        ride.save()
+        messages.success(request, "Ride cancelled successfully.")
+    else:
+        messages.error(request, "This ride cannot be cancelled.")
+    
+    return redirect('my_rides')
+
+def estimate_fare_view(request):
+    """
+    AJAX view to estimate ride fare
+    """
+    if request.method == 'POST':
+        try:
+            pickup_location = request.POST.get('pickup_location', '')
+            dropoff_location = request.POST.get('dropoff_location', '')
+            ride_type = request.POST.get('ride_type', 'standard')
+            
+            # Basic fare estimation logic
+            base_fare = 5.00
+            multipliers = {
+                'standard': 1.0,
+                'shared': 0.8,
+                'premium': 1.5
+            }
+            
+            # You would typically use a more sophisticated method 
+            # like geocoding and distance calculation
+            distance_factor = 1.0  # Placeholder
+            
+            estimated_fare = base_fare * multipliers.get(ride_type, 1.0) * distance_factor
+            
+            return JsonResponse({
+                'success': True,
+                'estimated_fare': round(estimated_fare, 2)
+            })
+        
+        except Exception as e:
+            return JsonResponse({
+                'success': False,
+                'error': str(e)
+            })
+    
+    return JsonResponse({
+        'success': False,
+        'error': 'Invalid request method'
+    })
