@@ -4,56 +4,100 @@
 {% block dashboard_title %}{% trans "Home" %}{% endblock dashboard_title %}
 
 {% block dashboard_content %}
-<!-- Dashboard Content -->
 <main class="p-4 lg:p-8">
-    <!-- Role-Specific Content -->
+    <!-- Role-Specific Alerts -->
+    {% if user.is_superuser %}
+        {% if pending_approvals_count > 0 %}
+            <div class="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 mb-4" role="alert">
+                <p class="font-bold">{% trans "Pending Approvals" %}</p>
+                <p>{% blocktrans count counter=pending_approvals_count %}You have {{ counter }} appointment waiting for approval.{% plural %}You have {{ counter }} appointments waiting for approval.{% endblocktrans %}</p>
+                <a href="{% url 'appointments' %}" class="text-yellow-700 underline">{% trans "Review Appointments" %}</a>
+            </div>
+        {% endif %}
+    {% elif user.is_driver %}
+        <!-- Driver Alerts -->
+        <div class="bg-blue-100 border-l-4 border-blue-500 text-blue-700 p-4 mb-4" role="alert">
+            <p class="font-bold">{% trans "Welcome, Driver!" %}</p>
+            <p>{% trans "Check your ongoing rides or view your earnings." %}</p>
+            <a href="{% url 'my_rides' %}" class="text-blue-700 underline">{% trans "View Rides" %}</a>
+        </div>
+    {% else %}
+        <!-- Passenger Alerts -->
+        <div class="bg-primary border-l-4 border-blue-400 text-white p-4 mb-4 text-lg" role="alert">
+            <p class="font-bold">{% trans "In a hurry?" %}</p>
+            <a href="{% url 'request_ride' %}" class="text-white underline">{% trans "Book A Ride" %}</a>
+        </div>
+    {% endif %}
+
+    <!-- Role-Specific Stats -->
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
         {% if user.is_superuser %}
-            <!-- Manager-Specific Stats -->
+            <!-- Admin Stats -->
             <div class="p-4 lg:p-6 bg-white rounded-lg shadow-sm">
                 <h3 class="text-sm font-medium text-gray-500">{% trans "Total Users" %}</h3>
                 <div class="mt-2 flex items-baseline">
-                    <p class="text-xl lg:text-2xl font-semibold text-gray-900">1,234</p>
+                    <p class="text-xl lg:text-2xl font-semibold text-gray-900">{{ total_users }}</p>
                     <span class="ml-2 text-sm font-medium text-green-600">+5.2%</span>
                 </div>
             </div>
             <div class="p-4 lg:p-6 bg-white rounded-lg shadow-sm">
                 <h3 class="text-sm font-medium text-gray-500">{% trans "Total Drivers" %}</h3>
                 <div class="mt-2 flex items-baseline">
-                    <p class="text-xl lg:text-2xl font-semibold text-gray-900">456</p>
+                    <p class="text-xl lg:text-2xl font-semibold text-gray-900">{{ total_drivers }}</p>
                     <span class="ml-2 text-sm font-medium text-green-600">+3.8%</span>
                 </div>
             </div>
+            <div class="p-4 lg:p-6 bg-white rounded-lg shadow-sm">
+                <h3 class="text-sm font-medium text-gray-500">{% trans "Pending Approvals" %}</h3>
+                <div class="mt-2 flex items-baseline">
+                    <p class="text-xl lg:text-2xl font-semibold text-gray-900">{{ pending_approvals_count }}</p>
+                    <span class="ml-2 text-sm font-medium text-green-600">+2.1%</span>
+                </div>
+            </div>
         {% elif user.is_driver %}
-            <!-- Driver-Specific Stats -->
+            <!-- Driver Stats -->
             <div class="p-4 lg:p-6 bg-white rounded-lg shadow-sm">
                 <h3 class="text-sm font-medium text-gray-500">{% trans "Completed Rides" %}</h3>
                 <div class="mt-2 flex items-baseline">
-                    <p class="text-xl lg:text-2xl font-semibold text-gray-900">128</p>
+                    <p class="text-xl lg:text-2xl font-semibold text-gray-900">{{ completed_rides }}</p>
                     <span class="ml-2 text-sm font-medium text-green-600">+12.5%</span>
                 </div>
             </div>
             <div class="p-4 lg:p-6 bg-white rounded-lg shadow-sm">
                 <h3 class="text-sm font-medium text-gray-500">{% trans "Earnings" %}</h3>
                 <div class="mt-2 flex items-baseline">
-                    <p class="text-xl lg:text-2xl font-semibold text-gray-900">$2,340</p>
+                    <p class="text-xl lg:text-2xl font-semibold text-gray-900">${{ earnings }}</p>
                     <span class="ml-2 text-sm font-medium text-green-600">+8.1%</span>
                 </div>
             </div>
+            <div class="p-4 lg:p-6 bg-white rounded-lg shadow-sm">
+                <h3 class="text-sm font-medium text-gray-500">{% trans "Average Rating" %}</h3>
+                <div class="mt-2 flex items-baseline">
+                    <p class="text-xl lg:text-2xl font-semibold text-gray-900">{{ average_rating|default:"0" }}</p>
+                    <span class="ml-2 text-sm font-medium text-green-600">+1.2%</span>
+                </div>
+            </div>
         {% else %}
-            <!-- Passenger-Specific Stats -->
+            <!-- Passenger Stats -->
             <div class="p-4 lg:p-6 bg-white rounded-lg shadow-sm">
                 <h3 class="text-sm font-medium text-gray-500">{% trans "Total Rides" %}</h3>
                 <div class="mt-2 flex items-baseline">
-                    <p class="text-xl lg:text-2xl font-semibold text-gray-900">45</p>
+                    <p class="text-xl lg:text-2xl font-semibold text-gray-900">{{ total_rides }}</p>
                     <span class="ml-2 text-sm font-medium text-green-600">+12.5%</span>
                 </div>
             </div>
             <div class="p-4 lg:p-6 bg-white rounded-lg shadow-sm">
                 <h3 class="text-sm font-medium text-gray-500">{% trans "Active Bookings" %}</h3>
                 <div class="mt-2 flex items-baseline">
-                    <p class="text-xl lg:text-2xl font-semibold text-gray-900">2</p>
+                    <p class="text-xl lg:text-2xl font-semibold text-gray-900">{{ active_bookings }}</p>
                     <span class="ml-2 text-sm font-medium text-green-600">+2.4%</span>
+                </div>
+            </div>
+            <div class="p-4 lg:p-6 bg-white rounded-lg shadow-sm">
+                <h3 class="text-sm font-medium text-gray-500">{% trans "Favorite Driver" %}</h3>
+                <div class="mt-2 flex items-baseline">
+                    <p class="text-xl lg:text-2xl font-semibold text-gray-900">{{ favorite_driver|default:"None" }}</p>
+                    <span class="ml-2 text-sm font-medium text-green-600">+3.0%</span>
                 </div>
             </div>
         {% endif %}
@@ -63,16 +107,16 @@
     <div class="mt-6 lg:mt-8 bg-white rounded-lg shadow-sm p-4 lg:p-6">
         <h2 class="text-lg font-medium text-gray-800 mb-4">{% trans "Recent Activity" %}</h2>
         <div class="space-y-4">
-            {% for i in "123"|make_list %}
+            {% for activity in recent_activities %}
             <div class="flex items-center justify-between py-3 border-b border-gray-200 last:border-0">
                 <div class="flex items-center space-x-4">
                     <div class="w-8 h-8 lg:w-10 lg:h-10 rounded-full bg-gray-200"></div>
                     <div>
-                        <p class="text-sm font-medium text-gray-900">{% trans "Activity" %} {{ forloop.counter }}</p>
-                        <p class="text-xs lg:text-sm text-gray-500">{% trans "Description of activity" %} {{ forloop.counter }}</p>
+                        <p class="text-sm font-medium text-gray-900">{{ activity.title }}</p>
+                        <p class="text-xs lg:text-sm text-gray-500">{{ activity.description }}</p>
                     </div>
                 </div>
-                <span class="text-xs lg:text-sm text-gray-500">{% trans "2h ago" %}</span>
+                <span class="text-xs lg:text-sm text-gray-500">{{ activity.timestamp|timesince }} ago</span>
             </div>
             {% endfor %}
         </div>

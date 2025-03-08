@@ -5,6 +5,7 @@
 
 {% block dashboard_content %}
 <main class="p-4 lg:p-8">
+    <!-- Search Bar -->
     <div class="mb-6">
         <div class="relative">
             <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -36,7 +37,7 @@
         <div class="p-4 lg:p-6 bg-white rounded-lg shadow-sm">
             <h3 class="text-sm font-medium text-gray-500">{% trans "Average Rating" %}</h3>
             <div class="mt-2 flex items-baseline">
-                <p class="text-xl lg:text-2xl font-semibold text-gray-900">{{ average_rating|default:"0" }}</p>
+                <p class="text-xl lg:text-2xl font-semibold text-gray-900">{{ average_rating|floatformat:2 }}</p>
             </div>
         </div>
     </div>
@@ -67,6 +68,11 @@
                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                             {% trans "Active Rate" %}
                         </th>
+                        {% if user.is_superuser %}
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            {% trans "Actions" %}
+                        </th>
+                        {% endif %}
                     </tr>
                 </thead>
                 <tbody class="bg-white divide-y divide-gray-200">
@@ -99,14 +105,19 @@
                             </div>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
-                            <div class="text-sm text-gray-900">{{ driver.avg_rating|default:"0" }}</div>
+                            <div class="text-sm text-gray-900">{{ driver.avg_rating|default:"0"|floatformat:2 }}</div>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
                             <div class="text-sm text-gray-900">{{ driver.total_rides|default:"0" }}</div>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
-                            <div class="text-sm text-gray-900">{{ driver.active_rate|default:"0" }}%</div>
+                            <div class="text-sm text-gray-900">{{ driver.active_rate|default:"0"|floatformat:2 }}%</div>
                         </td>
+                        {% if user.is_superuser %}
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <a href="{% url 'driver_update' driver.id %}" class="text-blue-600 hover:text-blue-900">{% trans "Edit" %}</a>
+                        </td>
+                        {% endif %}
                     </tr>
                     {% endfor %}
                 </tbody>

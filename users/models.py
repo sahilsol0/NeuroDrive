@@ -4,6 +4,8 @@ from django.db import models
 from django.db.models import Q
 from django.db.models.signals import post_save, pre_delete, post_delete
 from django.dispatch import receiver
+from django.contrib.auth import get_user_model
+
 
 class CustomUserManager(BaseUserManager):
     def create_user(self, email, password=None, **extra_fields):
@@ -53,6 +55,7 @@ class Driver(models.Model):
     full_name = models.CharField(max_length=100)
     dob = models.DateField()
     address = models.TextField(blank=True, null=True)
+    average_rating = models.FloatField(default=0.0)  # Add average_rating here
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -105,7 +108,9 @@ class Appointment(models.Model):
 
     def is_for_driver(self):
         return self.appointment_type == 'upgrade'
-    
+
+User = get_user_model()
+
 class Ride(models.Model):
     RIDE_STATUS_CHOICES = (
         ('requested', 'Requested'),
@@ -115,74 +120,66 @@ class Ride(models.Model):
         ('cancelled', 'Cancelled')
     )
 
-    RIDE_TYPE_CHOICES = (
-        ('standard', 'Standard'),
-        ('shared', 'Shared Ride'),
-        ('premium', 'Premium')
-    )
-    
-    ride_type = models.CharField(
-        max_length=20, 
-        choices=RIDE_TYPE_CHOICES, 
-        default='standard'
-    )
-    special_requirements = models.TextField(
-        blank=True, 
-        null=True
-    )
-
-    passenger = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='passenger_rides')
-    driver = models.ForeignKey(Driver, on_delete=models.SET_NULL, null=True, blank=True, related_name='driver_rides')
-    
+    special_requirements = models.TextField(blank=True, null=True)
+    passenger = models.ForeignKey(User, on_delete=models.CASCADE, related_name='passenger_rides')
+    driver = models.ForeignKey('Driver', on_delete=models.SET_NULL, null=True, blank=True, related_name='driver_rides')
     pickup_location = models.CharField(max_length=255)
     dropoff_location = models.CharField(max_length=255)
-    
-    pickup_time = models.DateTimeField()
-    estimated_arrival_time = models.DateTimeField(null=True, blank=True)
-    
+    code = models.CharField(max_length=6, unique=True, blank=True)
     status = models.CharField(max_length=20, choices=RIDE_STATUS_CHOICES, default='requested')
-    
-    fare = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
-    
     created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+
+    def generate_code(self):
+        """Generate a random 6-digit code."""
+        return ''.join(random.choices('0123456789', k=6))
 
     def __str__(self):
         return f"Ride from {self.pickup_location} to {self.dropoff_location}"
+    
+    @property
+    def review(self):
+        try:
+            return self.review
+        except RideReview.DoesNotExist:
+            return None
 
     def assign_random_driver(self):
-        """
-        Assign a random available driver to the ride.
-        A driver is considered available if:
-        1. They are not currently on an active ride
-        2. They have an active driver profile
-        """
-        # Find drivers who are not currently on an active ride
         active_ride_drivers = Ride.objects.filter(
             Q(status__in=['assigned', 'in_progress']) & 
             Q(driver__isnull=False)
         ).values_list('driver_id', flat=True)
 
-        # Get available drivers (those with driver profiles who are not on active rides)
         available_drivers = Driver.objects.exclude(id__in=active_ride_drivers)
 
         if available_drivers.exists():
-            # Randomly select a driver
             selected_driver = random.choice(available_drivers)
             self.driver = selected_driver
             self.status = 'assigned'
             self.save()
             return selected_driver
-        
         return None
+
+    def update_driver_rating(self):
+        """
+        Update the driver's average rating based on user reviews and drowsiness scores.
+        """
+        if self.driver and self.status == 'completed':
+            # Calculate average user rating
+            user_ratings = RideReview.objects.filter(ride__driver=self.driver).values_list('passenger_rating', flat=True)
+            avg_user_rating = sum(user_ratings) / len(user_ratings) if user_ratings else 0
+
+            # Calculate average drowsiness score
+            drowsiness_scores = DriverBehavior.objects.filter(driver=self.driver).values_list('drowsiness_score', flat=True)
+            avg_drowsiness_score = sum(drowsiness_scores) / len(drowsiness_scores) if drowsiness_scores else 0
+
+            # Combine ratings (e.g., 70% user rating, 30% drowsiness score)
+            self.driver.average_rating = (avg_user_rating * 0.7) + (avg_drowsiness_score * 0.3)
+            self.driver.save()  # Save the updated average_rating in the Driver model
 
 class RideReview(models.Model):
     ride = models.OneToOneField(Ride, on_delete=models.CASCADE, related_name='review')
-    passenger_rating = models.IntegerField(choices=[(i, i) for i in range(1, 6)])
-    driver_rating = models.IntegerField(choices=[(i, i) for i in range(1, 6)])
-    passenger_comment = models.TextField(blank=True, null=True)
-    driver_comment = models.TextField(blank=True, null=True)
-    
+    driver_rating = models.IntegerField(choices=[(i, i) for i in range(1, 6)], null=False)  # Ensure not nullable
+    passenger_comment = models.TextField(blank=True, null=True)  # Passenger's comment
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
@@ -204,3 +201,15 @@ def book_ride(passenger, pickup_location, dropoff_location, pickup_time):
     ride.assign_random_driver()
     
     return ride
+
+class DriverBehavior(models.Model):
+    driver = models.ForeignKey(Driver, on_delete=models.CASCADE, related_name='behaviors')  # Link to Driver
+    blink_rate = models.FloatField()
+    yawn_frequency = models.FloatField()
+    head_pose = models.CharField(max_length=50)
+    drowsiness_score = models.FloatField()
+    alert_level = models.CharField(max_length=50)
+    timestamp = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Behavior for {self.driver.full_name} at {self.timestamp}"

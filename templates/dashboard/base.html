@@ -82,10 +82,10 @@
                         <i data-lucide="trophy" class="w-5 h-5"></i>
                         <span class="ml-3">{% trans "Leaderboard" %}</span>
                     </a>
-                    <a href="{% url "ratings" %}" class="flex items-center px-4 py-3 {% if request.resolver_match.url_name == 'ratings' %}text-white bg-primary{% else %}text-gray-700 hover:bg-gray-100{% endif %} rounded-lg">
+                    {% comment %} <a href="{% url "ratings" %}" class="flex items-center px-4 py-3 {% if request.resolver_match.url_name == 'ratings' %}text-white bg-primary{% else %}text-gray-700 hover:bg-gray-100{% endif %} rounded-lg">
                         <i data-lucide="star" class="w-5 h-5"></i>
                         <span class="ml-3">{% trans "Ratings" %}</span>
-                    </a>
+                    </a> {% endcomment %}
                     <a href="{% url "appointments" %}" class="flex items-center px-4 py-3 {% if request.resolver_match.url_name == 'appointments' %}text-white bg-primary{% else %}text-gray-700 hover:bg-gray-100{% endif %} rounded-lg">
                         <i data-lucide="calendar" class="w-5 h-5"></i>
                         <span class="ml-3">{% trans "Book Appointment" %}</span>
@@ -131,11 +131,15 @@
                             <i data-lucide="trophy" class="w-5 h-5"></i>
                             <span class="ml-3">{% trans "Leaderboard" %}</span>
                         </a>
-                        <a href="{% url "ratings" %}" class="flex items-center px-4 py-3 {% if request.resolver_match.url_name == 'ratings' %}text-white bg-primary{% else %}text-gray-700 hover:bg-gray-100{% endif %} rounded-lg">
+                        {% comment %} <a href="{% url "ratings" %}" class="flex items-center px-4 py-3 {% if request.resolver_match.url_name == 'ratings' %}text-white bg-primary{% else %}text-gray-700 hover:bg-gray-100{% endif %} rounded-lg">
                             <i data-lucide="star" class="w-5 h-5"></i>
                             <span class="ml-3">{% trans "Ratings" %}</span>
-                        </a>
+                        </a> {% endcomment %}
                         {% if user.is_superuser %}
+                            <a href="{% url "appointments" %}" class="flex items-center px-4 py-3 {% if request.resolver_match.url_name == 'appointments' %}text-white bg-primary{% else %}text-gray-700 hover:bg-gray-100{% endif %} rounded-lg">
+                                <i data-lucide="calendar" class="w-5 h-5"></i>
+                                <span class="ml-3">{% trans "Appointments" %}</span>
+                            </a>
                             <a href="{% url "register_driver" %}" class="flex items-center px-4 py-3 {% if request.resolver_match.url_name == 'register_driver' %}text-white bg-primary{% else %}text-gray-700 hover:bg-gray-100{% endif %} rounded-lg">
                                 <i data-lucide="user-round-plus" class="w-5 h-5"></i>
                                 <span class="ml-3">{% trans "Add New Driver" %}</span>
@@ -149,7 +153,15 @@
                                 <i data-lucide="calendar" class="w-5 h-5"></i>
                                 <span class="ml-3">{% trans "Book Appointment" %}</span>
                             </a>
+                            <a href="{% url "my_rides" %}" class="flex items-center px-4 py-3 {% if request.resolver_match.url_name == 'my_rides' %}text-white bg-primary{% else %}text-gray-700 hover:bg-gray-100{% endif %} rounded-lg">
+                                <i data-lucide="calendar" class="w-5 h-5"></i>
+                                <span class="ml-3">{% trans "Rides" %}</span>
+                            </a>
                         {% else %}
+                            <a href="{% url "my_rides" %}" class="flex items-center px-4 py-3 {% if request.resolver_match.url_name == 'my_rides' %}text-white bg-primary{% else %}text-gray-700 hover:bg-gray-100{% endif %} rounded-lg">
+                                <i data-lucide="calendar" class="w-5 h-5"></i>
+                                <span class="ml-3">{% trans "Book Ride" %}</span>
+                            </a>
                             
                         {% endif %}
                     </div>

@@ -8,7 +8,7 @@
     <div class="bg-white shadow-md rounded-lg overflow-hidden">
         <div class="p-6 bg-gray-50 border-b border-gray-200 flex justify-between items-center">
             <h2 class="text-2xl font-bold text-gray-800">{% trans "Your Ride History" %}</h2>
-            <a href="{% url 'book_ride' %}" class="btn btn-primary">
+            <a href="{% url 'request_ride' %}" class="btn btn-primary">
                 {% trans "Book New Ride" %}
             </a>
         </div>
@@ -75,7 +75,7 @@
                             {% endif %}
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                            <a href="{% url 'ride_details' ride.id %}" class="text-blue-600 hover:text-blue-900 mr-3">
+                            <a href="{% url 'ride_status' ride.id %}" class="text-blue-600 hover:text-blue-900 mr-3">
                                 {% trans "Details" %}
                             </a>
                             {% if ride.status in 'requested,assigned' %}
@@ -92,7 +92,7 @@
         {% else %}
         <div class="p-6 text-center text-gray-500">
             {% trans "You have no ride history yet." %}
-            <a href="{% url 'book_ride' %}" class="text-blue-600 hover:underline ml-2">
+            <a href="{% url 'request_ride' %}" class="text-blue-600 hover:underline ml-2">
                 {% trans "Book your first ride" %}
             </a>
         </div>

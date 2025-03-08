@@ -25,4 +25,9 @@ class CustomUserAdmin(UserAdmin):
 
 admin.site.register(CustomUser, CustomUserAdmin)
 admin.site.register(Driver)
-admin.site.register(Ride)
+
+@admin.register(Ride)
+class RideAdmin(admin.ModelAdmin):
+    list_display = ('id', 'passenger', 'driver', 'status', 'code', 'created_at')
+    list_filter = ('status', 'created_at')
+    search_fields = ('passenger__email', 'driver__email', 'code')

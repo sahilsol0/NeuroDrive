@@ -1,7 +1,7 @@
 {% extends "dashboard/base.html" %}
 {% load i18n %}
 
-{% block dashboard_title %}{% trans "Book Appointment" %}{% endblock dashboard_title %}
+{% block dashboard_title %}{% trans "Appointments" %}{% endblock dashboard_title %}
 
 {% block dashboard_content %}
 <main class="p-4 lg:p-8">
@@ -10,28 +10,90 @@
         <div class="p-4 lg:p-6 bg-white rounded-lg shadow-sm">
             <h3 class="text-sm font-medium text-gray-500">{% trans "Upcoming Appointments" %}</h3>
             <div class="mt-2 flex items-baseline">
-                <p class="text-xl lg:text-2xl font-semibold text-gray-900">2</p>
+                <p class="text-xl lg:text-2xl font-semibold text-gray-900">{{ upcoming_appointments_count }}</p>
             </div>
         </div>
         <div class="p-4 lg:p-6 bg-white rounded-lg shadow-sm">
-            <h3 class="text-sm font-medium text-gray-500">{% trans "Available Time Slots" %}</h3>
+            <h3 class="text-sm font-medium text-gray-500">{% trans "Pending Approvals" %}</h3>
             <div class="mt-2 flex items-baseline">
-                <p class="text-xl lg:text-2xl font-semibold text-gray-900">14</p>
-                <span class="ml-2 text-sm font-medium text-gray-600">{% trans "this week" %}</span>
+                <p class="text-xl lg:text-2xl font-semibold text-gray-900">{{ pending_appointments_count }}</p>
             </div>
         </div>
         <div class="p-4 lg:p-6 bg-white rounded-lg shadow-sm">
             <h3 class="text-sm font-medium text-gray-500">{% trans "Last Appointment" %}</h3>
             <div class="mt-2">
-                <p class="text-xl lg:text-2xl font-semibold text-gray-900">{% trans "2 weeks ago" %}</p>
+                <p class="text-xl lg:text-2xl font-semibold text-gray-900">{{ last_appointment_date }}</p>
             </div>
         </div>
     </div>
 
-    <!-- Booking Form -->
+    <!-- Upcoming Appointments -->
     <div class="mt-6 lg:mt-8 bg-white rounded-lg shadow-sm">
         <div class="px-4 py-5 sm:px-6 border-b border-gray-200">
-            <h2 class="text-lg font-medium text-gray-800">{% trans "Book New Appointment" %}</h2>
+            <h2 class="text-lg font-medium text-gray-800">{% trans "Your Appointments" %}</h2>
+            <p class="mt-1 text-sm text-gray-500">{% trans "Manage your scheduled appointments" %}</p>
+        </div>
+        
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            {% trans "Type" %}
+                        </th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            {% trans "Date" %}
+                        </th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            {% trans "Time" %}
+                        </th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            {% trans "Status" %}
+                        </th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            {% trans "Actions" %}
+                        </th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    {% for appointment in appointments %}
+                    <tr>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="text-sm font-medium text-gray-900">{{ appointment.get_appointment_type_display }}</div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="text-sm text-gray-900">{{ appointment.appointment_date }}</div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="text-sm text-gray-900">{{ appointment.time_slot }}</div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                                {% if appointment.status == 'pending' %}bg-yellow-100 text-yellow-800
+                                {% elif appointment.status == 'confirmed' %}bg-green-100 text-green-800
+                                {% elif appointment.status == 'cancelled' %}bg-red-100 text-red-800
+                                {% else %}bg-gray-100 text-gray-800{% endif %}">
+                                {{ appointment.get_status_display }}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {% if appointment.status == 'pending' %}
+                                <a href="#" class="text-blue-600 hover:text-blue-900 mr-3">{% trans "Edit" %}</a>
+                                <a href="#" class="text-red-600 hover:text-red-900">{% trans "Cancel" %}</a>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Booking Form (Only for Drivers) -->
+    {% if request.user.is_driver %}
+    <div class="mt-6 lg:mt-8 bg-white rounded-lg shadow-sm">
+        <div class="px-4 py-5 sm:px-6 border-b border-gray-200">
+            <h2 class="text-lg font-medium text-gray-800">{% trans "Request New Appointment" %}</h2>
             <p class="mt-1 text-sm text-gray-500">{% trans "Select a date and time for your appointment" %}</p>
         </div>
         
@@ -110,25 +172,30 @@
                             {% trans "Cancel" %}
                         </button>
                         <button type="submit" class="ml-3 inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                            {% trans "Book Appointment" %}
+                            {% trans "Request Appointment" %}
                         </button>
                     </div>
                 </div>
             </form>
         </div>
     </div>
+    {% endif %}
 
-    <!-- Upcoming Appointments -->
+    <!-- Pending Approvals (Only for Managers) -->
+    {% if request.user.is_superuser %}
     <div class="mt-6 lg:mt-8 bg-white rounded-lg shadow-sm">
         <div class="px-4 py-5 sm:px-6 border-b border-gray-200">
-            <h2 class="text-lg font-medium text-gray-800">{% trans "Your Upcoming Appointments" %}</h2>
-            <p class="mt-1 text-sm text-gray-500">{% trans "Manage your scheduled appointments" %}</p>
+            <h2 class="text-lg font-medium text-gray-800">{% trans "Pending Approvals" %}</h2>
+            <p class="mt-1 text-sm text-gray-500">{% trans "Approve or reject appointment requests" %}</p>
         </div>
         
         <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-200">
                 <thead class="bg-gray-50">
                     <tr>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            {% trans "Driver" %}
+                        </th>
                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                             {% trans "Type" %}
                         </th>
@@ -139,58 +206,36 @@
                             {% trans "Time" %}
                         </th>
                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            {% trans "Status" %}
-                        </th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                             {% trans "Actions" %}
                         </th>
                     </tr>
                 </thead>
                 <tbody class="bg-white divide-y divide-gray-200">
+                    {% for appointment in pending_approvals %}
                     <tr>
                         <td class="px-6 py-4 whitespace-nowrap">
-                            <div class="text-sm font-medium text-gray-900">{% trans "Safety Training" %}</div>
+                            <div class="text-sm font-medium text-gray-900">{{ appointment.user.email }}</div>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
-                            <div class="text-sm text-gray-900">2025-03-10</div>
+                            <div class="text-sm text-gray-900">{{ appointment.get_appointment_type_display }}</div>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
-                            <div class="text-sm text-gray-900">10:00 AM</div>
+                            <div class="text-sm text-gray-900">{{ appointment.appointment_date }}</div>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
-                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                                {% trans "Confirmed" %}
-                            </span>
+                            <div class="text-sm text-gray-900">{{ appointment.time_slot }}</div>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            <a href="#" class="text-blue-600 hover:text-blue-900 mr-3">{% trans "Reschedule" %}</a>
-                            <a href="#" class="text-red-600 hover:text-red-900">{% trans "Cancel" %}</a>
+                            <a href="{% url 'approve_appointment' appointment.id %}" class="text-green-600 hover:text-green-900 mr-3">{% trans "Approve" %}</a>
+                            <a href="{% url 'reject_appointment' appointment.id %}" class="text-red-600 hover:text-red-900">{% trans "Reject" %}</a>
                         </td>
                     </tr>
-                    <tr>
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <div class="text-sm font-medium text-gray-900">{% trans "Vehicle Maintenance" %}</div>
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <div class="text-sm text-gray-900">2025-03-15</div>
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <div class="text-sm text-gray-900">02:00 PM</div>
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
-                                {% trans "Pending" %}
-                            </span>
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            <a href="#" class="text-blue-600 hover:text-blue-900 mr-3">{% trans "Reschedule" %}</a>
-                            <a href="#" class="text-red-600 hover:text-red-900">{% trans "Cancel" %}</a>
-                        </td>
-                    </tr>
+                    {% endfor %}
                 </tbody>
             </table>
         </div>
     </div>
+    {% endif %}
 </main>
 
 <script>

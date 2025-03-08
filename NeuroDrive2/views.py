@@ -1,3 +1,4 @@
+import json
 import re
 from datetime import datetime, timedelta
 from django.utils import timezone
@@ -8,12 +9,14 @@ from django.contrib.auth.decorators import login_required, user_passes_test
 from django.views import View
 from django.contrib import messages
 from django.core.exceptions import PermissionDenied
-from users.forms import DriverUpdateForm, RideBookingForm
-from users.models import Appointment, CustomUser, Driver, Ride
+from users.forms import DriverUpdateForm, RideBookingForm, RideReviewForm
+from users.models import Appointment, CustomUser, Driver, DriverBehavior, Ride, RideReview
 from django.views.generic import ListView, UpdateView, DeleteView
 from django.urls import reverse_lazy
 from django.shortcuts import render
 from django.db.models import Count, Avg
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
 
 # Check if the user is an admin
 def is_admin(user):
@@ -23,11 +26,29 @@ class LandingView(View):
     def get(self, request):
         return render(request, "landing.html", context={})
 
-@login_required()
 def home(request):
-    return render(request, "dashboard/home.html", context={})
+    context = {}
+    if request.user.is_superuser:
+        context.update({
+            'total_users': CustomUser.objects.count(),
+            'total_drivers': Driver.objects.count(),
+            'pending_approvals_count': Appointment.objects.filter(status='pending').count(),
+        })
+    elif request.user.is_driver:
+        driver = request.user.driver
+        context.update({
+            'completed_rides': Ride.objects.filter(driver=driver, status='completed').count(),
+            # 'earnings': driver.earnings,  # Assuming earnings is a field in the Driver model
+            'average_rating': driver.average_rating,
+        })
+    else:
+        context.update({
+            'total_rides': Ride.objects.filter(passenger=request.user).count(),
+            'active_bookings': Ride.objects.filter(passenger=request.user, status__in=['assigned', 'in_progress']).count(),
+            # 'favorite_driver': request.user.favorite_driver,  # Assuming favorite_driver is a field in the User model
+        })
+    return render(request, 'dashboard/home.html', context)
 
-@login_required()
 def leaderboard(request):
     # Fetch drivers with their ratings, number of rides, and active rate
     drivers = Driver.objects.annotate(
@@ -35,22 +56,51 @@ def leaderboard(request):
         avg_rating=Avg('driver_rides__review__driver_rating'),
     ).order_by('-avg_rating')  # Sort by average rating (highest first)
 
-    # Add ranking to each driver
-    for index, driver in enumerate(drivers, start=1):
-        driver.rank = index
+    # Calculate active rate for each driver
+    for driver in drivers:
+        total_assigned_rides = driver.driver_rides.filter(status__in=['assigned', 'in_progress', 'completed']).count()
+        total_completed_rides = driver.driver_rides.filter(status='completed').count()
+        driver.active_rate = (total_completed_rides / total_assigned_rides * 100) if total_assigned_rides > 0 else 0
+
+    # Calculate the overall average rating for all drivers
+    overall_avg_rating = Driver.objects.aggregate(
+        overall_avg_rating=Avg('driver_rides__review__driver_rating')
+    )['overall_avg_rating'] or 0
 
     context = {
         'drivers': drivers,
+        'active_drivers_count': drivers.filter(user__is_active=True).count(),
+        'average_rating': overall_avg_rating,  # Use the calculated overall average rating
     }
     return render(request, 'dashboard/leaderboard.html', context)
 
-@login_required()
-def ratings(request):
-    return render(request, "dashboard/ratings.html", context={})
-
 @login_required
 def appointments(request):
-    return render(request, 'dashboard/appointments.html')
+    if request.user.is_superuser:
+        # Managers see all appointments and pending approvals
+        appointments = Appointment.objects.all()
+        pending_approvals = Appointment.objects.filter(status='pending')  # This is a queryset
+    else:
+        # Drivers only see their own appointments
+        appointments = Appointment.objects.filter(user=request.user)  # This is a queryset
+        pending_approvals = Appointment.objects.none()  # Empty queryset for non-managers
+
+    # Count the number of upcoming and pending appointments
+    upcoming_appointments_count = appointments.filter(status='confirmed').count()  # Correct usage
+    pending_appointments_count = pending_approvals.count()  # Correct usage
+
+    # Get the last appointment date
+    last_appointment = appointments.order_by('-appointment_date').first()
+    last_appointment_date = last_appointment.appointment_date if last_appointment else "No appointments yet"
+
+    context = {
+        'appointments': appointments,
+        'pending_approvals': pending_approvals,
+        'upcoming_appointments_count': upcoming_appointments_count,
+        'pending_appointments_count': pending_appointments_count,
+        'last_appointment_date': last_appointment_date,
+    }
+    return render(request, 'dashboard/appointments.html', context)
 
 @login_required
 def book_appointment(request):
@@ -63,20 +113,38 @@ def book_appointment(request):
         time_slot = request.POST.get('time_slot')
         notes = request.POST.get('notes')
         
-        # Save to database (you would create a model for this)
+        # Save to database
         Appointment.objects.create(
             user=request.user,
             appointment_type=appointment_type,
             appointment_date=appointment_date,
             time_slot=time_slot,
             notes=notes,
-            status='pending'
+            status='pending'  # Set status to pending by default
         )
         
-        messages.success(request, 'Appointment booked successfully!')
+        messages.success(request, 'Appointment requested successfully! Awaiting manager approval.')
         return redirect('appointments')
     
     return render(request, 'dashboard/book_appointment.html')
+
+@login_required
+@user_passes_test(is_admin)
+def approve_appointment(request, appointment_id):
+    appointment = get_object_or_404(Appointment, id=appointment_id)
+    appointment.status = 'confirmed'
+    appointment.save()
+    messages.success(request, 'Appointment approved successfully.')
+    return redirect('appointments')
+
+@login_required
+@user_passes_test(is_admin)
+def reject_appointment(request, appointment_id):
+    appointment = get_object_or_404(Appointment, id=appointment_id)
+    appointment.status = 'cancelled'
+    appointment.save()
+    messages.success(request, 'Appointment rejected successfully.')
+    return redirect('appointments')
 
 @login_required
 @user_passes_test(is_admin)
@@ -241,87 +309,124 @@ class DriverDeleteView(DeleteView):
     success_url = reverse_lazy('driver_list')
 
 @login_required
-def book_ride_view(request):
-    """
-    View to handle ride booking
-    """
+def request_ride(request):
     if request.method == 'POST':
         form = RideBookingForm(request.POST)
         if form.is_valid():
-            # Create ride instance
             ride = form.save(commit=False)
             ride.passenger = request.user
-            
-            # Combine date and time into a naive datetime object
-            pickup_datetime = datetime.combine(
-                form.cleaned_data['pickup_date'], 
-                form.cleaned_data['pickup_time']
-            )
-            # Make the datetime object timezone-aware
-            ride.pickup_time = timezone.make_aware(pickup_datetime)
-            
-            # Save the ride
+
+            # Generate a unique code for the ride
+            ride.code = ride.generate_code()
+
+            # Save the ride to the database
             ride.save()
-            
-            # Attempt to assign a driver
-            try:
-                ride.assign_random_driver()
-            except Exception as e:
-                messages.warning(request, f"Could not assign a driver: {str(e)}")
-            
-            messages.success(request, "Ride booked successfully!")
-            return redirect('my_rides')
+
+            # Attempt to assign a random driver
+            assigned_driver = ride.assign_random_driver()
+
+            if assigned_driver:
+                messages.success(request, f"Ride requested! Your code is: {ride.code}. Driver {assigned_driver.full_name} has been assigned.")
+            else:
+                messages.warning(request, f"Ride requested! Your code is: {ride.code}. No available drivers at the moment. Please wait for a driver to become available.")
+
+            return redirect('ride_status', ride_id=ride.id)
         else:
             messages.error(request, "Please correct the errors in the form.")
     else:
         form = RideBookingForm()
-    
-    return render(request, 'dashboard/rides/book_ride.html', {
-        'form': form,
-        'recent_rides': Ride.objects.filter(passenger=request.user).order_by('-created_at')[:5]
-    })
+    return render(request, 'dashboard/rides/book_ride.html', {'form': form})
 
 @login_required
-def my_rides_view(request):
-    """
-    View to show user's ride history
-    """
-    rides = Ride.objects.filter(passenger=request.user).order_by('-created_at')
-    return render(request, 'dashboard/rides/my_rides.html', {
-        'rides': rides
-    })
+
+def start_ride(request, ride_id):
+    # Ensure the user is a driver
+    if not request.user.is_driver:
+        raise PermissionDenied("You do not have permission to start a ride.")
+
+    # Get the Driver instance associated with the current user
+    driver = request.user.driver
+
+    # Filter the ride by the driver
+    ride = get_object_or_404(Ride, id=ride_id, driver=driver)
+
+    if request.method == 'POST':
+        code = request.POST.get('code')
+        if code == ride.code:
+            ride.status = 'in_progress'
+            ride.save()
+            messages.success(request, "Ride started!")
+            return redirect('ride_status', ride_id=ride.id)
+        else:
+            messages.error(request, "Invalid code. Please try again.")
+
+    return render(request, 'dashboard/rides/start_ride.html', {'ride': ride})
 
 @login_required
-def ride_details_view(request, ride_id):
-    """
-    View to show details of a specific ride
-    """
+def complete_ride(request, ride_id):
+    # Ensure the user is a driver
+    if not request.user.is_driver:
+        raise PermissionDenied("You do not have permission to complete a ride.")
+
+    # Get the Driver instance associated with the current user
+    try:
+        driver = request.user.driver
+    except Driver.DoesNotExist:
+        raise PermissionDenied("Driver profile not found.")
+
+    # Filter the ride by the driver and ensure it's in progress
+    ride = get_object_or_404(Ride, id=ride_id, driver=driver, status='in_progress')
+
+    if request.method == 'POST':
+        # Update the ride status to 'completed'
+        ride.status = 'completed'
+        ride.save()
+        messages.success(request, "Ride completed successfully!")
+        return redirect('ride_status', ride_id=ride.id)
+
+    return render(request, 'dashboard/rides/complete_ride.html', {'ride': ride})
+
+@login_required
+def cancel_ride(request, ride_id):
     ride = get_object_or_404(Ride, id=ride_id, passenger=request.user)
-    return render(request, 'dashboard/rides/ride_details.html', {
-        'ride': ride
-    })
 
-@login_required
-def cancel_ride_view(request, ride_id):
-    """
-    View to cancel a ride
-    """
-    ride = get_object_or_404(Ride, id=ride_id, passenger=request.user)
-    
-    # Only allow cancellation of pending or upcoming rides
-    if ride.status in ['requested', 'assigned']:
+    if request.method == 'POST':
         ride.status = 'cancelled'
         ride.save()
         messages.success(request, "Ride cancelled successfully.")
+        return redirect('my_rides')
+
+    return render(request, 'dashboard/rides/cancel_ride.html', {'ride': ride})
+
+@login_required
+def ride_status(request, ride_id):
+    ride = get_object_or_404(Ride, id=ride_id)
+
+    # Ensure the user is either the passenger or the driver
+    if ride.passenger != request.user and (not request.user.is_driver or ride.driver != request.user.driver):
+        messages.error(request, "You do not have permission to view this ride.")
+        return redirect('home')
+
+    # Fetch the review if it exists
+    try:
+        review = RideReview.objects.get(ride=ride)
+    except RideReview.DoesNotExist:
+        review = None
+
+    return render(request, 'dashboard/rides/ride_status.html', {'ride': ride, 'review': review})
+
+@login_required
+def my_rides_view(request):
+    if request.user.is_driver:
+        # If the user is a driver, show rides assigned to them
+        rides = Ride.objects.filter(driver=request.user.driver).order_by('-created_at')
     else:
-        messages.error(request, "This ride cannot be cancelled.")
+        # If the user is a passenger, show rides they booked
+        rides = Ride.objects.filter(passenger=request.user).order_by('-created_at')
     
-    return redirect('my_rides')
+    return render(request, 'dashboard/rides/my_rides.html', {'rides': rides})
 
 def estimate_fare_view(request):
-    """
-    AJAX view to estimate ride fare
-    """
     if request.method == 'POST':
         try:
             pickup_location = request.POST.get('pickup_location', '')
@@ -336,9 +441,8 @@ def estimate_fare_view(request):
                 'premium': 1.5
             }
             
-            # You would typically use a more sophisticated method 
-            # like geocoding and distance calculation
-            distance_factor = 1.0  # Placeholder
+            # Placeholder for distance factor (you can replace this with actual distance calculation)
+            distance_factor = 1.0
             
             estimated_fare = base_fare * multipliers.get(ride_type, 1.0) * distance_factor
             
@@ -346,14 +450,61 @@ def estimate_fare_view(request):
                 'success': True,
                 'estimated_fare': round(estimated_fare, 2)
             })
-        
         except Exception as e:
             return JsonResponse({
                 'success': False,
                 'error': str(e)
             })
-    
     return JsonResponse({
         'success': False,
         'error': 'Invalid request method'
     })
+
+@login_required
+def submit_review(request, ride_id):
+    ride = get_object_or_404(Ride, id=ride_id)
+
+    # Ensure the user is the passenger
+    if ride.passenger != request.user:
+        messages.error(request, "You do not have permission to review this ride.")
+        return redirect('home')
+
+    # Check if a review already exists for this ride
+    try:
+        review = RideReview.objects.get(ride=ride)
+    except RideReview.DoesNotExist:
+        review = None
+
+    if request.method == 'POST':
+        form = RideReviewForm(request.POST, instance=review)
+        if form.is_valid():
+            review = form.save(commit=False)
+            review.ride = ride
+            review.save()
+            messages.success(request, "Thank you for your feedback!")
+            return redirect('ride_status', ride_id=ride.id)
+    else:
+        form = RideReviewForm(instance=review)
+
+    return render(request, 'dashboard/rides/submit_review.html', {'form': form, 'ride': ride})
+
+@csrf_exempt
+def receive_drowsiness_data(request):
+    if request.method == 'POST':
+        data = json.loads(request.body)
+        blink_rate = data.get('blink_rate')
+        yawn_frequency = data.get('yawn_frequency')
+        head_pose = data.get('head_pose')
+        drowsiness_score = data.get('drowsiness_score')
+        alert_level = data.get('alert_level')
+
+        # Save the data to the database
+        DriverBehavior.objects.create(
+            blink_rate=blink_rate,
+            yawn_frequency=yawn_frequency,
+            head_pose=head_pose,
+            drowsiness_score=drowsiness_score,
+            alert_level=alert_level,
+        )
+        return JsonResponse({'status': 'success'})
+    return JsonResponse({'status': 'error', 'message': 'Invalid request method'}, status=400)
