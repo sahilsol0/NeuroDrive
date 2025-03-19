@@ -1,0 +1,84 @@
+{
+    "popular_locations": [
+      {
+        "name": "Trivandrum International Airport",
+        "address": "Chacka, Thiruvananthapuram, Kerala 695008"
+      },
+      {
+        "name": "Kochi International Airport",
+        "address": "Nedumbassery, Kochi, Kerala 683111"
+      },
+      {
+        "name": "Lulu Mall Kochi",
+        "address": "NH 47, Edappally Junction, Kochi, Kerala 682024"
+      },
+      {
+        "name": "Fort Kochi",
+        "address": "Fort Kochi, Kochi, Kerala 682001"
+      },
+      {
+        "name": "Munnar Town",
+        "address": "Munnar, Idukki, Kerala 685612"
+      },
+      {
+        "name": "Kovalam Beach",
+        "address": "Kovalam, Thiruvananthapuram, Kerala 695527"
+      },
+      {
+        "name": "Technopark",
+        "address": "Kazhakkoottam, Thiruvananthapuram, Kerala 695581"
+      },
+      {
+        "name": "Infopark Kochi",
+        "address": "Kakkanad, Kochi, Kerala 682042"
+      },
+      {
+        "name": "Kozhikode Beach",
+        "address": "Beach Road, Kozhikode, Kerala 673001"
+      },
+      {
+        "name": "Varkala Beach",
+        "address": "Varkala, Thiruvananthapuram, Kerala 695141"
+      },
+      {
+        "name": "Wayanad Wildlife Sanctuary",
+        "address": "Sultan Bathery, Wayanad, Kerala 673592"
+      },
+      {
+        "name": "Mattancherry Palace",
+        "address": "Palace Road, Mattancherry, Kochi, Kerala 682002"
+      },
+      {
+        "name": "Medical College Kozhikode",
+        "address": "Medical College Road, Kozhikode, Kerala 673008"
+      },
+      {
+        "name": "Thrissur Railway Station",
+        "address": "Railway Station Road, Thrissur, Kerala 680001"
+      },
+      {
+        "name": "Ernakulam Junction Railway Station",
+        "address": "M.G. Road, Ernakulam, Kerala 682016"
+      },
+      {
+        "name": "Malampuzha Gardens",
+        "address": "Malampuzha, Palakkad, Kerala 678651"
+      },
+      {
+        "name": "Thekkady",
+        "address": "Kumily, Idukki, Kerala 685509"
+      },
+      {
+        "name": "Alappuzha Boat Jetty",
+        "address": "Alappuzha, Kerala 688013"
+      },
+      {
+        "name": "Guruvayur Temple",
+        "address": "Guruvayur, Thrissur, Kerala 680101"
+      },
+      {
+        "name": "Sabarimala Temple",
+        "address": "Sabarimala, Pathanamthitta, Kerala 689713"
+      }
+    ]
+  }

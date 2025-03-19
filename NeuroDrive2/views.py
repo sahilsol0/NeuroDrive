@@ -1,4 +1,5 @@
 import json
+import os
 import re
 from datetime import datetime, timedelta
 from django.utils import timezone
@@ -9,6 +10,7 @@ from django.contrib.auth.decorators import login_required, user_passes_test
 from django.views import View
 from django.contrib import messages
 from django.core.exceptions import PermissionDenied
+from NeuroDrive2 import settings
 from users.forms import DriverUpdateForm, RideBookingForm, RideReviewForm
 from users.models import Appointment, CustomUser, Driver, DriverBehavior, Ride, RideReview
 from django.views.generic import ListView, UpdateView, DeleteView
@@ -76,18 +78,34 @@ def leaderboard(request):
 
 @login_required
 def appointments(request):
-    if request.user.is_superuser:
-        # Managers see all appointments and pending approvals
-        appointments = Appointment.objects.all()
-        pending_approvals = Appointment.objects.filter(status='pending')  # This is a queryset
-    else:
-        # Drivers only see their own appointments
-        appointments = Appointment.objects.filter(user=request.user)  # This is a queryset
-        pending_approvals = Appointment.objects.none()  # Empty queryset for non-managers
+    appointments = Appointment.objects.all()
 
-    # Count the number of upcoming and pending appointments
-    upcoming_appointments_count = appointments.filter(status='confirmed').count()  # Correct usage
-    pending_appointments_count = pending_approvals.count()  # Correct usage
+    if request.user.is_superuser:
+        # Apply search filters for managers
+        search_email = request.GET.get('search_email')
+        search_type = request.GET.get('search_type')
+        search_date = request.GET.get('search_date')
+        search_status = request.GET.get('search_status')
+
+        if search_email:
+            appointments = appointments.filter(user__email__icontains=search_email)
+        if search_type:
+            appointments = appointments.filter(appointment_type=search_type)
+        if search_date:
+            appointments = appointments.filter(appointment_date=search_date)
+        if search_status:
+            appointments = appointments.filter(status=search_status)
+
+        # Pending approvals for managers
+        pending_approvals = appointments.filter(status='pending')
+    else:
+        # Drivers see their own appointments
+        appointments = appointments.filter(user=request.user)
+        pending_approvals = Appointment.objects.none()
+
+    # Count upcoming and pending appointments
+    upcoming_appointments_count = appointments.filter(status='confirmed').count()
+    pending_appointments_count = pending_approvals.count()
 
     # Get the last appointment date
     last_appointment = appointments.order_by('-appointment_date').first()
@@ -99,12 +117,19 @@ def appointments(request):
         'upcoming_appointments_count': upcoming_appointments_count,
         'pending_appointments_count': pending_appointments_count,
         'last_appointment_date': last_appointment_date,
+        'APPOINTMENT_TYPES': Appointment.APPOINTMENT_TYPES,  # Pass appointment types
+        'STATUS_CHOICES': Appointment.STATUS_CHOICES,        # Pass status choices
     }
     return render(request, 'dashboard/appointments.html', context)
 
 @login_required
 def book_appointment(request):
-    if not request.user.is_driver:
+    # Allow passengers to book an appointment only if the type is "upgrade"
+    if not request.user.is_driver and request.method == 'POST':
+        appointment_type = request.POST.get('appointment_type')
+        if appointment_type != 'upgrade':
+            raise PermissionDenied("You do not have permission to book this type of appointment.")
+    elif not request.user.is_driver:
         raise PermissionDenied("You do not have permission to book an appointment.")
 
     if request.method == 'POST':
@@ -127,6 +152,17 @@ def book_appointment(request):
         return redirect('appointments')
     
     return render(request, 'dashboard/book_appointment.html')
+
+@login_required
+@user_passes_test(is_admin)  # Ensure only managers can access this view
+def appointment_detail(request, appointment_id):
+    appointment = get_object_or_404(Appointment, id=appointment_id)
+    context = {
+        'appointment': appointment,
+        'is_upgrade': appointment.appointment_type == 'upgrade',  # Check if appointment type is "upgrade"
+        'user_email': appointment.user.email if appointment.appointment_type == 'upgrade' else None,  # Pass user email
+    }
+    return render(request, 'dashboard/appointment_detail.html', context)
 
 @login_required
 @user_passes_test(is_admin)
@@ -308,8 +344,24 @@ class DriverDeleteView(DeleteView):
     template_name = 'dashboard/drivers/driver_confirm_delete.html'
     success_url = reverse_lazy('driver_list')
 
+def load_kerala_locations():
+    """Load location data directly from JSON file"""
+    # Define the path to the JSON file
+    json_file = os.path.join(settings.BASE_DIR, 'data', 'kerala_locations.json')
+    
+    try:
+        with open(json_file, 'r') as file:
+            locations_data = json.load(file)
+            return locations_data.get('popular_locations', [])
+    except (FileNotFoundError, json.JSONDecodeError) as e:
+        # Return empty list if file not found or invalid JSON
+        print(f"Error loading locations: {e}")
+        return []
+
 @login_required
 def request_ride(request):
+    locations = load_kerala_locations()
+
     if request.method == 'POST':
         form = RideBookingForm(request.POST)
         if form.is_valid():
@@ -335,10 +387,12 @@ def request_ride(request):
             messages.error(request, "Please correct the errors in the form.")
     else:
         form = RideBookingForm()
-    return render(request, 'dashboard/rides/book_ride.html', {'form': form})
+    return render(request, 'dashboard/rides/book_ride.html', {
+        'form': form,
+        'locations': locations,
+    })
 
 @login_required
-
 def start_ride(request, ride_id):
     # Ensure the user is a driver
     if not request.user.is_driver:

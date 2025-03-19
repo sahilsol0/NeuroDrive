@@ -16,15 +16,46 @@
                 <form method="post" class="space-y-6">
                     {% csrf_token %}
                     
-                    <!-- Render the form fields -->
-                    {{ form.as_p }}
+                    <!-- Range Slider for Rating -->
+                    <div class="mb-6">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            {% trans "Rate your experience (1-5)" %}
+                        </label>
+                        <div class="flex items-center space-x-4">
+                            <input type="range" 
+                                   id="rating-slider" 
+                                   name="driver_rating" 
+                                   min="1" 
+                                   max="5" 
+                                   step="1" 
+                                   value="1" 
+                                   class="w-full h-1 bg-gray-100 rounded-lg appearance-none cursor-pointer"
+                                   required>
+                            <span id="rating-value" class="text-2xl font-medium text-gray-800">1</span>
+                        </div>
+                        <p id="rating-error" class="mt-2 text-sm text-red-600 hidden">
+                            {% trans "Please select a rating." %}
+                        </p>
+                    </div>
 
-                    <div class="flex justify-end space-x-4">
-                        <a href="{% url 'ride_status' ride.id %}" class="btn btn-secondary">
-                            {% trans "Cancel" %}
+                    <!-- Passenger Comment -->
+                    <div>
+                        <label for="passenger_comment" class="block text-sm font-medium text-gray-700 mb-2">
+                            {% trans "Comments (optional)" %}
+                        </label>
+                        <textarea id="passenger_comment" name="passenger_comment" rows="4"
+                                  class="mt-1 p-2 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                                  placeholder="{% trans 'Share your experience...' %}"></textarea>
+                    </div>
+
+                    <!-- Form Actions -->
+                    <div class="flex justify-between space-x-4">
+                        <a href="{% url 'ride_status' ride.id %}" class="flex items-center gap-2 px-4 py-3 text-gray-700 hover:bg-gray-100 hover:text-gray-700 rounded-xl">
+                            <i data-lucide="arrow-left" class="w-5 h-5"></i>
+                            {% trans "Go Back" %}
                         </a>
-                        <button type="submit" class="btn btn-primary">
-                            {% trans "Submit Review" %}
+                        <button type="submit" class="flex items-center gap-2 px-4 py-3 text-blue-700 bg-blue-100 hover:bg-blue-200 hover:text-blue-700 rounded-xl">
+                            {% trans "Submit Rating" %}
                         </button>
                     </div>
                 </form>
@@ -35,4 +66,27 @@
         </div>
     </div>
 </div>
+
+<!-- JavaScript for Range Slider -->
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const ratingSlider = document.getElementById('rating-slider');
+        const ratingValue = document.getElementById('rating-value');
+        const ratingError = document.getElementById('rating-error');
+
+        // Update the displayed rating value when the slider changes
+        ratingSlider.addEventListener('input', function () {
+            ratingValue.textContent = this.value;
+        });
+
+        // Validate rating on form submission
+        const form = document.querySelector('form');
+        form.addEventListener('submit', function (e) {
+            if (ratingSlider.value === '0') {
+                e.preventDefault();
+                ratingError.classList.remove('hidden');
+            }
+        });
+    });
+</script>
 {% endblock dashboard_content %}

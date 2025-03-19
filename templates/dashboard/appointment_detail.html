@@ -1,0 +1,76 @@
+{% extends "dashboard/base.html" %}
+{% load i18n %}
+
+{% block dashboard_title %}{% trans "Appointment Details" %}{% endblock dashboard_title %}
+
+{% block dashboard_content %}
+<main class="p-4 lg:p-8">
+    <div class="bg-white rounded-lg shadow-sm">
+        <div class="px-4 py-5 sm:px-6 border-b border-gray-200">
+            <h2 class="text-lg font-medium text-gray-800">{% trans "Appointment Details" %}</h2>
+            <p class="mt-1 text-sm text-gray-500">{% trans "Detailed information about the appointment." %}</p>
+        </div>
+        
+        <div class="p-4 sm:p-6">
+            <div class="space-y-4">
+                <!-- User Information -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">{% trans "User" %}</label>
+                    <p class="mt-1 text-sm text-gray-900">{{ appointment.user.email }}</p>
+                </div>
+
+                <!-- Appointment Type -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">{% trans "Appointment Type" %}</label>
+                    <p class="mt-1 text-sm text-gray-900">{{ appointment.get_appointment_type_display }}</p>
+                </div>
+
+                <!-- Appointment Date -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">{% trans "Date" %}</label>
+                    <p class="mt-1 text-sm text-gray-900">{{ appointment.appointment_date }}</p>
+                </div>
+
+                <!-- Time Slot -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">{% trans "Time Slot" %}</label>
+                    <p class="mt-1 text-sm text-gray-900">{{ appointment.time_slot }}</p>
+                </div>
+
+                <!-- Status -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">{% trans "Status" %}</label>
+                    <p class="mt-1 text-sm text-gray-900">{{ appointment.get_status_display }}</p>
+                </div>
+
+                <!-- Notes -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">{% trans "Notes" %}</label>
+                    <p class="mt-1 text-sm text-gray-900">{{ appointment.notes|default:"No notes provided." }}</p>
+                </div>
+
+                <!-- Register Driver Link (Only for Upgrade Appointments) -->
+                {% if is_upgrade %}
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">{% trans "Register Driver" %}</label>
+                    <p class="mt-1 text-sm text-gray-900">
+                        <a href="{% url 'register_driver' %}?user_email={{ user_email }}" class="text-blue-600 hover:text-blue-900">
+                            {% trans "Register this user as a driver" %}
+                        </a>
+                    </p>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Back Button -->
+            <div class="pt-5">
+                <div class="flex justify-end">
+                    <a href="{% url 'appointments' %}" class="bg-white py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                        {% trans "Back to Appointments" %}
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+{% endblock dashboard_content %}

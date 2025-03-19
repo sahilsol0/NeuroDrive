@@ -25,7 +25,7 @@
         <!-- Ride Details -->
         <div class="p-6 space-y-6">
             <!-- Pickup and Dropoff Locations -->
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <div>
                     <h3 class="text-sm font-medium text-gray-500 mb-2">
                         {% trans "Pickup Location" %}
@@ -45,12 +45,12 @@
             </div>
 
             <!-- Secret Code (Visible only to the passenger) -->
-            {% if ride.passenger == request.user %}
+            {% if ride.passenger == request.user and not ride.status == 'completed' %}
             <div class="mt-6">
                 <h3 class="text-sm font-medium text-gray-500 mb-2">
                     {% trans "Ride Code" %}
                 </h3>
-                <p class="text-gray-900 font-semibold">
+                <p class="text-gray-900 text-2xl font-semibold">
                     {{ ride.code }}
                 </p>
             </div>
@@ -62,7 +62,7 @@
                 <h3 class="text-sm font-medium text-gray-500 mb-2">
                     {% trans "Driver Details" %}
                 </h3>
-                <div class="bg-gray-50 p-4 rounded-lg">
+                <div class="bg-gray-50 p-4 rounded-xl">
                     <div class="flex items-center">
                         <div class="flex-shrink-0 h-12 w-12 rounded-full bg-gray-300"></div>
                         <div class="ml-4">
@@ -80,10 +80,11 @@
                 <h3 class="text-sm font-medium text-gray-500 mb-2">
                     {% trans "Passenger Details" %}
                 </h3>
-                <div class="bg-gray-50 p-4 rounded-lg">
+                <div class="bg-gray-50 p-4 rounded-xl">
                     <div class="flex items-center">
                         <div class="flex-shrink-0 h-12 w-12 rounded-full bg-gray-300"></div>
                         <div class="ml-4">
+                            <p class="text-sm font-medium text-gray-900">{{ ride.passenger.first_name }} {{ride.passenger.last_name}}</p>
                             <p class="text-sm font-medium text-gray-900">{{ ride.passenger.email }}</p>
                         </div>
                     </div>
@@ -133,30 +134,41 @@
             </div>
             {% endif %}
 
-            <!-- ride_status.html -->
             <div class="mt-6 flex justify-between">
-                <a href="{% url 'my_rides' %}" class="btn btn-secondary">
-                    {% trans "Back to Rides" %}
+                <a href="{% url 'my_rides' %}" class="flex items-center px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-xl">
+                    <i data-lucide="arrow-left" class="w-5 h-5"></i>
+                    <span class="ml-3">{% trans "Go Back" %}</span>
                 </a>
                 
                 <!-- Cancel Ride Button (for Passengers) -->
                 {% if ride.status in 'requested,assigned' and not request.user.is_driver %}
-                <a href="{% url 'cancel_ride' ride.id %}" class="btn btn-danger">
-                    {% trans "Cancel Ride" %}
+                <a href="{% url 'cancel_ride' ride.id %}" class="flex items-center px-4 py-3 bg-red-100 text-red-700 hover:bg-red-100 hover:text-red-700 rounded-xl">
+                    <i data-lucide="ban" class="w-5 h-5"></i>
+                    <span class="ml-3">{% trans "Cancel Ride" %}</span>
                 </a>
                 {% endif %}
-
+                
                 <!-- Start Ride Button (for Drivers) -->
                 {% if ride.status == 'assigned' and request.user.is_driver %}
-                <a href="{% url 'start_ride' ride.id %}" class="btn btn-primary">
+                <a href="{% url 'start_ride' ride.id %}" class="flex items-center px-4 py-3 text-blue-700 bg-blue-100 hover:bg-blue-200 hover:text-blue-700 rounded-xl">
+                    <i data-lucide="arrow-big-right-dash" class="w-5 h-5"></i>
                     {% trans "Start Ride" %}
                 </a>
                 {% endif %}
-
+                
                 <!-- Complete Ride Button (for Drivers) -->
                 {% if ride.status == 'in_progress' and request.user.is_driver %}
-                <a href="{% url 'complete_ride' ride.id %}" class="btn btn-success">
+                <a href="{% url 'complete_ride' ride.id %}" class="flex items-center px-4 py-3 text-blue-700 bg-blue-100 hover:bg-blue-200 hover:text-blue-700 rounded-xl">
+                    <i data-lucide="arrow-big-right-dash" class="w-5 h-5"></i>
                     {% trans "Complete Ride" %}
+                </a>
+                {% endif %}
+
+                <!-- Submit Review Button (for Passengers) -->
+                {% if ride.status == 'completed' and ride.passenger == request.user and not review %}
+                <a href="{% url 'submit_review' ride.id %}" class="flex items-center px-4 py-3 text-blue-700 bg-blue-100 hover:bg-blue-200 hover:text-blue-700 rounded-xl">
+                    <i data-lucide="star" class="w-5 h-5"></i>
+                    <span class="ml-3">{% trans "Rate Ride" %}</span>
                 </a>
                 {% endif %}
             </div>

@@ -1,62 +1,128 @@
 {% extends "dashboard/base.html" %}
 {% load i18n %}
+{% load static %}
 
 {% block dashboard_title %}{% trans "Book a Ride" %}{% endblock dashboard_title %}
 
 {% block dashboard_content %}
-<div class="container mx-auto px-4 py-8">
-    <div class="max-w-2xl mx-auto bg-white shadow-md rounded-lg overflow-hidden">
-        <div class="p-6">
-            <h2 class="text-2xl font-bold text-gray-800 mb-6">{% trans "Book Your Ride" %}</h2>
-            
+<main class="p-4 lg:p-8">
+    <!-- Booking Form -->
+    <div class="bg-white rounded-lg shadow-sm">
+        <div class="px-4 py-5 sm:px-6 border-b border-gray-200">
+            <h2 class="text-lg font-medium text-gray-800">{% trans "Book Your Ride" %}</h2>
+            <p class="mt-1 text-sm text-gray-500">{% trans "Enter pickup and dropoff locations to book your ride" %}</p>
+        </div>
+        
+        <div class="p-4 sm:p-6">
             <form method="post" class="space-y-6">
                 {% csrf_token %}
                 
                 {% if form.non_field_errors %}
-                <div class="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded relative" role="alert">
+                <div class="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-md" role="alert">
                     {% for error in form.non_field_errors %}
                         <p>{{ error }}</p>
                     {% endfor %}
                 </div>
                 {% endif %}
             
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                        <label for="{{ form.pickup_location.id_for_label }}" class="block text-sm font-medium text-gray-700">
-                            {% trans "Pickup Location" %}
-                        </label>
-                        {{ form.pickup_location }}
-                        {% if form.pickup_location.errors %}
-                        <p class="mt-2 text-sm text-red-600">
-                            {% for error in form.pickup_location.errors %}
-                                {{ error }}
-                            {% endfor %}
-                        </p>
-                        {% endif %}
-                    </div>
-            
-                    <div>
-                        <label for="{{ form.dropoff_location.id_for_label }}" class="block text-sm font-medium text-gray-700">
-                            {% trans "Dropoff Location" %}
-                        </label>
-                        {{ form.dropoff_location }}
-                        {% if form.dropoff_location.errors %}
-                        <p class="mt-2 text-sm text-red-600">
-                            {% for error in form.dropoff_location.errors %}
-                                {{ error }}
-                            {% endfor %}
-                        </p>
-                        {% endif %}
-                    </div>
+                <!-- Pickup Location -->
+                <div>
+                    <label for="{{ form.pickup_location.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                        {% trans "Pickup Location" %}
+                    </label>
+                    <input 
+                        type="text" 
+                        name="{{ form.pickup_location.html_name }}"
+                        id="{{ form.pickup_location.id_for_label }}"
+                        class="mt-1 block w-full border border-gray-300 p-2 rounded-md shadow-sm focus:outline-none focus:placeholder-gray-300 focus:ring-1 focus:ring-primary focus:border-primary sm:text-sm"
+                        placeholder="{% trans 'Enter pickup address' %}"
+                        list="pickup-suggestions"
+                        required
+                    >
+                    <datalist id="pickup-suggestions">
+                        {% for location in locations %}
+                        <option value="{{ location.name }} - {{ location.address }}">
+                        {% endfor %}
+                    </datalist>
+                    {% if form.pickup_location.errors %}
+                    <p class="mt-2 text-sm text-red-600">
+                        {% for error in form.pickup_location.errors %}
+                            {{ error }}
+                        {% endfor %}
+                    </p>
+                    {% endif %}
+                    <p class="mt-2 text-xs text-gray-500">{% trans "Popular pickup locations from Kerala are available in the dropdown" %}</p>
+                </div>
+        
+                <!-- Dropoff Location -->
+                <div>
+                    <label for="{{ form.dropoff_location.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                        {% trans "Dropoff Location" %}
+                    </label>
+                    <input 
+                        type="text" 
+                        name="{{ form.dropoff_location.html_name }}"
+                        id="{{ form.dropoff_location.id_for_label }}"
+                        class="mt-1 block w-full border border-gray-300 p-2 rounded-md shadow-sm focus:outline-none focus:placeholder-gray-300 focus:ring-1 focus:ring-primary focus:border-primary sm:text-sm"
+                        placeholder="{% trans 'Enter destination address' %}"
+                        list="dropoff-suggestions"
+                        required
+                    >
+                    <datalist id="dropoff-suggestions">
+                        {% for location in locations %}
+                        <option value="{{ location.name }} - {{ location.address }}">
+                        {% endfor %}
+                    </datalist>
+                    {% if form.dropoff_location.errors %}
+                    <p class="mt-2 text-sm text-red-600">
+                        {% for error in form.dropoff_location.errors %}
+                            {{ error }}
+                        {% endfor %}
+                    </p>
+                    {% endif %}
+                    <p class="mt-2 text-xs text-gray-500">{% trans "Popular destinations from Kerala are available in the dropdown" %}</p>
+                </div>
+                
+                <!-- Estimated Fare Section (Optional) -->
+                <div class="mt-6 p-4 bg-blue-50 rounded-md hidden" id="fare-estimate-container">
+                    <h3 class="text-md font-medium text-blue-800">{% trans "Estimated Fare" %}</h3>
+                    <p class="text-blue-700" id="fare-estimate">₹0.00</p>
+                    <p class="text-xs text-blue-600 mt-1">{% trans "This is an approximate fare. Actual fare may vary." %}</p>
                 </div>
             
-                <div class="flex justify-end space-x-4">
-                    <a href="{% url 'my_rides' %}" class="btn btn-secondary">
-                        {% trans "Cancel" %}
-                    </a>
-                    <button type="submit" class="btn btn-primary">
-                        {% trans "Book Ride" %}
-                    </button>
+                <!-- Form Actions -->
+                <div class="pt-5">
+                    <!-- For large screens -->
+                    <div class="hidden lg:flex justify-between items-center">
+                        <button type="button" id="estimate-fare-btn" class="flex items-center px-4 py-3 text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-xl">
+                            {% trans "Estimate Fare" %}
+                        </button>
+                        
+                        <div class="flex space-x-4">
+                            <a href="{% url 'my_rides' %}" class="flex items-center px-4 py-3 text-gray-700 hover:bg-gray-100 hover:text-gray-700 rounded-xl">
+                                {% trans "Cancel" %}
+                            </a>
+                            <button type="submit" class="flex items-center px-4 py-3 text-gray-100 bg-primary hover:bg-blue-100 hover:text-primary rounded-xl">
+                                {% trans "Book Ride" %}
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- For mobile screens -->
+                    <div class="lg:hidden flex flex-col space-y-4">
+                        <button type="button" id="estimate-fare-btn" class="w-full flex items-center justify-center px-4 py-3 text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-xl">
+                            {% trans "Estimate Fare" %}
+                        </button>
+                        
+                        <div class="flex space-x-4">
+                            <a href="{% url 'my_rides' %}" class="w-1/2 flex items-center justify-center px-4 py-3 text-gray-700 hover:bg-gray-100 hover:text-gray-700 rounded-xl">
+                                {% trans "Go back" %}
+                            </a>
+                            <button type="submit" class="w-1/2 flex items-center justify-center px-4 py-3 text-gray-100 bg-primary hover:bg-blue-100 hover:text-primary rounded-xl">
+                                {% trans "Book Ride" %}
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </form>
 
@@ -71,5 +137,81 @@
             {% endif %}
         </div>
     </div>
-</div>
+</main>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const estimateFareBtn = document.getElementById('estimate-fare-btn');
+        const fareEstimateContainer = document.getElementById('fare-estimate-container');
+        const fareEstimate = document.getElementById('fare-estimate');
+        const pickupInput = document.getElementById('{{ form.pickup_location.id_for_label }}');
+        const dropoffInput = document.getElementById('{{ form.dropoff_location.id_for_label }}');
+        
+        // Mock fare calculation based on location names for Kerala
+        function calculateMockFare(pickup, dropoff) {
+            // Base fare in Rupees
+            let fare = 50.00;
+            
+            // Add fare based on location name length (just for demo purposes)
+            fare += (pickup.length * 0.5) + (dropoff.length * 0.75);
+            
+            // Add random factor to simulate distance/time variables
+            fare += Math.random() * 25;
+            
+            // Airport surcharge
+            if (pickup.includes('Airport') || dropoff.includes('Airport')) {
+                fare += 150.00;
+            }
+            
+            // Premium locations
+            const premiumLocations = ['Kovalam', 'Fort Kochi', 'Munnar', 'Technopark', 'Infopark'];
+            for (const loc of premiumLocations) {
+                if (pickup.includes(loc) || dropoff.includes(loc)) {
+                    fare += 75.00;
+                }
+            }
+            
+            // Long distance surcharge
+            const distantLocations = {
+                'Trivandrum': 0,
+                'Kochi': 220,
+                'Kozhikode': 385,
+                'Thrissur': 280,
+                'Munnar': 130,
+                'Wayanad': 420,
+                'Alappuzha': 160
+            };
+            
+            // Simplified distance calculation for demo
+            for (const [city1, km1] of Object.entries(distantLocations)) {
+                if (pickup.includes(city1)) {
+                    for (const [city2, km2] of Object.entries(distantLocations)) {
+                        if (dropoff.includes(city2)) {
+                            const distance = Math.abs(km1 - km2);
+                            fare += distance * 0.5;  // ₹0.5 per km
+                            break;
+                        }
+                    }
+                    break;
+                }
+            }
+            
+            return fare.toFixed(2);
+        }
+        
+        // Event listener for estimate fare button
+        estimateFareBtn.addEventListener('click', function() {
+            const pickup = pickupInput.value.trim();
+            const dropoff = dropoffInput.value.trim();
+            
+            if (pickup && dropoff) {
+                const estimatedFare = calculateMockFare(pickup, dropoff);
+                fareEstimate.textContent = `₹${estimatedFare}`;
+                fareEstimateContainer.classList.remove('hidden');
+            } else {
+                alert('{% trans "Please enter both pickup and dropoff locations to estimate fare." %}');
+            }
+        });
+    });
+</script>
 {% endblock dashboard_content %}

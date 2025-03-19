@@ -52,5 +52,48 @@
        </div>
     </footer>
 
+    <!-- Add this at the end of the <body> section in base.html -->
+        <div id="message-popup" class="fixed top-12 right-12 hidden">
+            <div class="bg-white rounded-lg shadow-lg p-4 max-w-sm">
+                <div class="flex items-center justify-between">
+                    <span id="message-text" class="text-sm"></span>
+                    <button id="close-message-popup" class="text-gray-500 hover:text-gray-700">
+                        <i data-lucide="x" class="w-4 h-4"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
 </body>
+    <script>
+        // Function to show messages as pop-ups
+        function showMessagePopup(message, messageType) {
+            const messagePopup = document.getElementById('message-popup');
+            const messageText = document.getElementById('message-text');
+    
+            // Set the message text and style based on the message type
+            messageText.textContent = message;
+            messagePopup.classList.remove('hidden');
+    
+            // Automatically hide the popup after 5 seconds
+            setTimeout(() => {
+                messagePopup.classList.add('hidden');
+            }, 5000);
+        }
+    
+        // Close the popup when the close button is clicked
+        document.getElementById('close-message-popup').addEventListener('click', () => {
+            document.getElementById('message-popup').classList.add('hidden');
+        });
+    
+        // Check for Django messages and display them
+        document.addEventListener('DOMContentLoaded', () => {
+            const messages = document.querySelectorAll('.messages .message');
+            messages.forEach(message => {
+                const messageText = message.textContent;
+                const messageType = message.classList.contains('error') ? 'error' : 'success';
+                showMessagePopup(messageText, messageType);
+            });
+        });
+    </script>
 </html>

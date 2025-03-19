@@ -82,22 +82,38 @@
                         <i data-lucide="trophy" class="w-5 h-5"></i>
                         <span class="ml-3">{% trans "Leaderboard" %}</span>
                     </a>
-                    {% comment %} <a href="{% url "ratings" %}" class="flex items-center px-4 py-3 {% if request.resolver_match.url_name == 'ratings' %}text-white bg-primary{% else %}text-gray-700 hover:bg-gray-100{% endif %} rounded-lg">
-                        <i data-lucide="star" class="w-5 h-5"></i>
-                        <span class="ml-3">{% trans "Ratings" %}</span>
-                    </a> {% endcomment %}
-                    <a href="{% url "appointments" %}" class="flex items-center px-4 py-3 {% if request.resolver_match.url_name == 'appointments' %}text-white bg-primary{% else %}text-gray-700 hover:bg-gray-100{% endif %} rounded-lg">
-                        <i data-lucide="calendar" class="w-5 h-5"></i>
-                        <span class="ml-3">{% trans "Book Appointment" %}</span>
-                    </a>
-                    <a href="#" class="flex items-center px-4 py-3 {% if request.resolver_match.url_name == 'settings' %}text-white bg-primary{% else %}text-gray-700 hover:bg-gray-100{% endif %} rounded-lg">
-                        <i data-lucide="settings" class="w-5 h-5"></i>
-                        <span class="ml-3">{% trans "Settings" %}</span>
-                    </a>
-                    <a href="#" class="flex items-center px-4 py-3 {% if request.resolver_match.url_name == 'help' %}text-white bg-primary{% else %}text-gray-700 hover:bg-gray-100{% endif %} rounded-lg">
-                        <i data-lucide="help-circle" class="w-5 h-5"></i>
-                        <span class="ml-3">{% trans "Help" %}</span>
-                    </a>
+                    {% if user.is_superuser %}
+                            <a href="{% url "appointments" %}" class="flex items-center px-4 py-3 {% if request.resolver_match.url_name == 'appointments' %}text-white bg-primary{% else %}text-gray-700 hover:bg-gray-100{% endif %} rounded-lg">
+                                <i data-lucide="calendar" class="w-5 h-5"></i>
+                                <span class="ml-3">{% trans "Appointments" %}</span>
+                            </a>
+                            <a href="{% url "register_driver" %}" class="flex items-center px-4 py-3 {% if request.resolver_match.url_name == 'register_driver' %}text-white bg-primary{% else %}text-gray-700 hover:bg-gray-100{% endif %} rounded-lg">
+                                <i data-lucide="user-round-plus" class="w-5 h-5"></i>
+                                <span class="ml-3">{% trans "Add New Driver" %}</span>
+                            </a>
+                            <a href="{% url 'driver_list' %}" class="flex items-center px-4 py-3 {% if request.resolver_match.url_name == 'driver_list' %}text-white bg-primary{% else %}text-gray-700 hover:bg-gray-100{% endif %} rounded-lg">
+                                <i data-lucide="users" class="w-5 h-5"></i>
+                                <span class="ml-3">{% trans "Driver List" %}</span>
+                            </a>
+                        {% elif user.is_driver %}
+                            <a href="{% url "appointments" %}" class="flex items-center px-4 py-3 {% if request.resolver_match.url_name == 'appointments' %}text-white bg-primary{% else %}text-gray-700 hover:bg-gray-100{% endif %} rounded-lg">
+                                <i data-lucide="calendar" class="w-5 h-5"></i>
+                                <span class="ml-3">{% trans "Book Appointment" %}</span>
+                            </a>
+                            <a href="{% url "my_rides" %}" class="flex items-center px-4 py-3 {% if request.resolver_match.url_name == 'my_rides' %}text-white bg-primary{% else %}text-gray-700 hover:bg-gray-100{% endif %} rounded-lg">
+                                <i data-lucide="calendar" class="w-5 h-5"></i>
+                                <span class="ml-3">{% trans "Rides" %}</span>
+                            </a>
+                        {% else %}
+                            <a href="{% url "my_rides" %}" class="flex items-center px-4 py-3 {% if request.resolver_match.url_name == 'my_rides' %}text-white bg-primary{% else %}text-gray-700 hover:bg-gray-100{% endif %} rounded-lg">
+                                <i data-lucide="calendar" class="w-5 h-5"></i>
+                                <span class="ml-3">{% trans "Book Ride" %}</span>
+                            </a>   
+                            <a href="{% url "appointments" %}" class="flex items-center px-4 py-3 {% if request.resolver_match.url_name == 'appointments' %}text-white bg-primary{% else %}text-gray-700 hover:bg-gray-100{% endif %} rounded-lg">
+                                <i data-lucide="calendar" class="w-5 h-5"></i>
+                                <span class="ml-3">{% trans "Book Appointment" %}</span>
+                            </a>
+                        {% endif %}
                 </div>
             </div>
             <div class="p-4 border-t">
@@ -159,10 +175,13 @@
                             </a>
                         {% else %}
                             <a href="{% url "my_rides" %}" class="flex items-center px-4 py-3 {% if request.resolver_match.url_name == 'my_rides' %}text-white bg-primary{% else %}text-gray-700 hover:bg-gray-100{% endif %} rounded-lg">
-                                <i data-lucide="calendar" class="w-5 h-5"></i>
-                                <span class="ml-3">{% trans "Book Ride" %}</span>
+                                <i data-lucide="car" class="w-5 h-5"></i>
+                                <span class="ml-3">{% trans "Book A Ride" %}</span>
                             </a>
-                            
+                            <a href="{% url "appointments" %}" class="flex items-center px-4 py-3 {% if request.resolver_match.url_name == 'appointments' %}text-white bg-primary{% else %}text-gray-700 hover:bg-gray-100{% endif %} rounded-lg">
+                                <i data-lucide="user-round-pen" class="w-5 h-5"></i>
+                                <span class="ml-3">{% trans "Upgrade to Driver" %}</span>
+                            </a>
                         {% endif %}
                     </div>
                     <div class="px-8 mt-8">

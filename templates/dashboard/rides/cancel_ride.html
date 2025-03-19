@@ -11,14 +11,14 @@
             
             <p class="mb-4">{% trans "Are you sure you want to cancel this ride?" %}</p>
             
-            <form method="post" class="space-y-6">
+            <form method="post" class="space-y-3">
                 {% csrf_token %}
                 
-                <div class="flex justify-end space-x-4">
-                    <a href="{% url 'ride_status' ride.id %}" class="btn btn-secondary">
+                <div class="flex justify-end space-x-2 sm:space-x-4">
+                    <a href="{% url 'ride_status' ride.id %}" class="flex items-center px-4 py-3 text-gray-700 hover:bg-gray-100 hover:text-gray-700 rounded-xl">
                         {% trans "No, Go Back" %}
                     </a>
-                    <button type="submit" class="btn btn-danger">
+                    <button type="submit" class="bflex items-center px-4 py-3 text-gray-700 hover:bg-red-100 hover:text-red-700 rounded-xl">
                         {% trans "Yes, Cancel Ride" %}
                     </button>
                 </div>

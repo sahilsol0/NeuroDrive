@@ -7,14 +7,17 @@
 <div class="container mx-auto px-4 py-8">
     <div class="bg-white shadow-md rounded-lg overflow-hidden">
         <div class="p-6 bg-gray-50 border-b border-gray-200 flex justify-between items-center">
-            <h2 class="text-2xl font-bold text-gray-800">{% trans "Your Ride History" %}</h2>
-            <a href="{% url 'request_ride' %}" class="btn btn-primary">
-                {% trans "Book New Ride" %}
+            <h2 class="text-xl lg:text-2xl font-bold text-gray-800">{% trans "Your Ride History" %}</h2>
+            {% if not request.user.is_driver %}
+            <a href="{% url 'request_ride' %}" class="text-xs lg:text-lg px-4 lg:px-6 py-2 text-white bg-primary hover:bg-blue-700 rounded-full">
+                {% trans "Book Ride" %}
             </a>
+            {% endif %}
         </div>
 
         {% if rides %}
-        <div class="overflow-x-auto">
+        <!-- Table for large devices -->
+        <div class="hidden lg:block overflow-x-auto">
             <table class="w-full">
                 <thead class="bg-gray-100">
                     <tr>
@@ -36,8 +39,8 @@
                     {% for ride in rides %}
                     <tr>
                         <td class="px-6 py-4 whitespace-nowrap">
-                            <div class="text-sm font-medium text-gray-900">
-                                {{ ride.pickup_location }} → {{ ride.dropoff_location }}
+                            <div class="text-sm font-medium text-gray-900 grid gap-2 lg:flex">
+                                {{ ride.pickup_location|truncatechars:50 }}<i data-lucide="arrow-right" class="w-5 h-5"></i>{{ ride.dropoff_location|truncatechars:50 }}
                             </div>
                             <div class="text-sm text-gray-500">
                                 {{ ride.ride_type|capfirst }} Ride
@@ -45,10 +48,7 @@
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
                             <div class="text-sm text-gray-900">
-                                {{ ride.pickup_time|date:"M d, Y" }}
-                            </div>
-                            <div class="text-sm text-gray-500">
-                                {{ ride.pickup_time|time:"h:i A" }}
+                                {{ ride.created_at|date:"M d, Y" }}
                             </div>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
@@ -76,7 +76,7 @@
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                             <a href="{% url 'ride_status' ride.id %}" class="text-blue-600 hover:text-blue-900 mr-3">
-                                {% trans "Details" %}
+                                {% trans "Details..." %}
                             </a>
                             {% if ride.status in 'requested,assigned' %}
                             <a href="{% url 'cancel_ride' ride.id %}" class="text-red-600 hover:text-red-900">
@@ -88,6 +88,62 @@
                     {% endfor %}
                 </tbody>
             </table>
+        </div>
+
+        <!-- Cards for small devices -->
+        <div class="lg:hidden">
+            {% for ride in rides %}
+            <div class="p-6 border-b border-gray-200">
+                <div class="text-sm font-medium text-gray-900">
+                    <div>
+                        {{ ride.pickup_location|truncatechars:40 }}
+                    </div>
+                    <div class="text-gray-500"><i data-lucide="arrow-down" class="w-5 h-10"></i></div>
+                    <div>
+                        {{ ride.dropoff_location|truncatechars:40 }}
+                    </div>
+                </div>
+                <div class="text-sm text-gray-500 mt-2">
+                    {{ ride.ride_type|capfirst }} Ride
+                </div>
+                <div class="text-sm text-gray-900 mt-2">
+                    {{ ride.created_at|date:"M d, Y" }}
+                </div>
+                <div class="mt-2">
+                    {% if ride.status == 'requested' %}
+                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
+                        {% trans "Requested" %}
+                    </span>
+                    {% elif ride.status == 'assigned' %}
+                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
+                        {% trans "Assigned" %}
+                    </span>
+                    {% elif ride.status == 'in_progress' %}
+                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                        {% trans "In Progress" %}
+                    </span>
+                    {% elif ride.status == 'completed' %}
+                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                        {% trans "Completed" %}
+                    </span>
+                    {% elif ride.status == 'cancelled' %}
+                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
+                        {% trans "Cancelled" %}
+                    </span>
+                    {% endif %}
+                </div>
+                <div class="mt-4 flex justify-between">
+                    {% if ride.status in 'requested,assigned' %}
+                    <a href="{% url 'cancel_ride' ride.id %}" class="text-red-600 hover:text-red-900">
+                        {% trans "Cancel" %}
+                    </a>
+                    {% endif %}
+                    <a href="{% url 'ride_status' ride.id %}" class="text-blue-600 hover:text-blue-900 mr-3">
+                        {% trans "Details..." %}
+                    </a>
+                </div>
+            </div>
+            {% endfor %}
         </div>
         {% else %}
         <div class="p-6 text-center text-gray-500">

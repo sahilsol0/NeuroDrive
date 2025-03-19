@@ -16,11 +16,13 @@
                 {% csrf_token %}
                 
                 <div class="flex justify-end space-x-4">
-                    <a href="{% url 'ride_status' ride.id %}" class="btn btn-secondary">
+                    <a href="{% url 'ride_status' ride.id %}" class="flex items-center gap-2 px-4 py-3 text-gray-700 hover:bg-gray-100 hover:text-gray-700 rounded-xl">
+                        <i data-lucide="arrow-left" class="w-5 h-5"></i>
                         {% trans "No, Go Back" %}
                     </a>
-                    <button type="submit" class="btn btn-success">
+                    <button type="submit" class="flex items-center gap-2 px-4 py-3 text-blue-700 bg-blue-100 hover:bg-blue-200 hover:text-blue-700 rounded-xl">
                         {% trans "Yes, Complete Ride" %}
+                        <i data-lucide="arrow-right" class="w-5 h-5"></i>
                     </button>
                 </div>
             </form>

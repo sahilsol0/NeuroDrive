@@ -5,6 +5,67 @@
 
 {% block dashboard_content %}
 <main class="p-4 lg:p-8">
+
+    {% if request.user.is_superuser %}
+    <div class="mb-6 lg:mb-8 bg-white rounded-lg shadow-sm">
+        <div class="px-4 py-5 sm:px-6 border-b border-gray-200">
+            <h2 class="text-lg font-medium text-gray-800">{% trans "Search Appointments" %}</h2>
+            <p class="mt-1 text-sm text-gray-500">{% trans "Filter appointments by user email, type, date, or status." %}</p>
+        </div>
+        
+        <div class="p-4 sm:p-6">
+            <form method="GET" action="{% url 'appointments' %}" class="space-y-4">
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <!-- Search by User Email -->
+                    <div>
+                        <label for="search_email" class="block text-sm font-medium text-gray-700">{% trans "User Email" %}</label>
+                        <input type="text" name="search_email" id="search_email" value="{{ request.GET.search_email }}" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                    </div>
+
+                    <!-- Search by Appointment Type -->
+                    <div>
+                        <label for="search_type" class="block text-sm font-medium text-gray-700">{% trans "Appointment Type" %}</label>
+                        <select name="search_type" id="search_type" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md">
+                            <option value="">{% trans "All Types" %}</option>
+                            {% for type_value, type_display in APPOINTMENT_TYPES %}
+                                <option value="{{ type_value }}" {% if request.GET.search_type == type_value %}selected{% endif %}>{{ type_display }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <!-- Search by Date -->
+                    <div>
+                        <label for="search_date" class="block text-sm font-medium text-gray-700">{% trans "Date" %}</label>
+                        <input type="date" name="search_date" id="search_date" value="{{ request.GET.search_date }}" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                    </div>
+
+                    <!-- Search by Status -->
+                    <div>
+                        <label for="search_status" class="block text-sm font-medium text-gray-700">{% trans "Status" %}</label>
+                        <select name="search_status" id="search_status" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md">
+                            <option value="">{% trans "All Statuses" %}</option>
+                            {% for status_value, status_display in STATUS_CHOICES %}
+                                <option value="{{ status_value }}" {% if request.GET.search_status == status_value %}selected{% endif %}>{{ status_display }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Search and Reset Buttons -->
+                <div class="pt-5">
+                    <div class="flex justify-end">
+                        <a href="{% url 'appointments' %}" class="bg-white py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                            {% trans "Reset" %}
+                        </a>
+                        <button type="submit" class="ml-3 inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                            {% trans "Search" %}
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+    {% endif %}
     <!-- Appointment Stats Overview -->
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
         <div class="p-4 lg:p-6 bg-white rounded-lg shadow-sm">
@@ -27,6 +88,75 @@
         </div>
     </div>
 
+    <!-- Upgrade to Driver Section (Only for Passengers) -->
+    {% if not request.user.is_driver and not request.user.is_superuser %}
+    <div class="mt-6 lg:mt-8 bg-white rounded-lg shadow-sm">
+        <div class="px-4 py-5 sm:px-6 border-b border-gray-200">
+            <h2 class="text-lg font-medium text-gray-800">{% trans "Upgrade to Driver" %}</h2>
+            <p class="mt-1 text-sm text-gray-500">{% trans "Request an appointment to upgrade your account to a driver." %}</p>
+        </div>
+        
+        <div class="p-4 sm:p-6">
+            <form method="POST" action="{% url 'book_appointment' %}" class="space-y-6">
+                {% csrf_token %}
+                
+                <!-- Hidden input for appointment type (set to 'upgrade') -->
+                <input type="hidden" name="appointment_type" value="upgrade">
+            
+                <!-- Date and Time Selection -->
+                <div class="grid grid-cols-1 gap-6 sm:grid-cols-2">
+                    <div>
+                        <label for="appointment_date" class="block text-sm font-medium text-gray-700">{% trans "Date" %}</label>
+                        <input type="date" name="appointment_date" id="appointment_date" required class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                    </div>
+                    <div>
+                        <label for="time_slot" class="block text-sm font-medium text-gray-700">{% trans "Available Time Slots" %}</label>
+                        <div class="mt-2 grid grid-cols-2 sm:grid-cols-4 gap-3" id="time_slots_container">
+                            <!-- Time slots will be dynamically populated based on selected date -->
+                            <div class="relative">
+                                <input type="radio" id="slot_1" name="time_slot" value="09:00" class="sr-only peer">
+                                <label for="slot_1" class="flex items-center justify-center px-3 py-2 text-sm font-medium border rounded-md cursor-pointer peer-checked:bg-blue-50 peer-checked:border-blue-500 hover:bg-gray-50">
+                                    09:00 AM
+                                </label>
+                            </div>
+                            <div class="relative">
+                                <input type="radio" id="slot_2" name="time_slot" value="10:00" class="sr-only peer">
+                                <label for="slot_2" class="flex items-center justify-center px-3 py-2 text-sm font-medium border rounded-md cursor-pointer peer-checked:bg-blue-50 peer-checked:border-blue-500 hover:bg-gray-50">
+                                    10:00 AM
+                                </label>
+                            </div>
+                            <div class="relative">
+                                <input type="radio" id="slot_3" name="time_slot" value="11:00" class="sr-only peer">
+                                <label for="slot_3" class="flex items-center justify-center px-3 py-2 text-sm font-medium border rounded-md cursor-pointer peer-checked:bg-blue-50 peer-checked:border-blue-500 hover:bg-gray-50">
+                                    11:00 AM
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            
+                <!-- Notes (Optional) -->
+                <div>
+                    <label for="notes" class="block text-sm font-medium text-gray-700">{% trans "Notes" %}</label>
+                    <textarea id="notes" name="notes" rows="3" class="mt-1 block w-full border border-gray-300 p-2 rounded-md shadow-sm focus:outline-none focus:placeholder-gray-300 focus:ring-1 focus:ring-primary focus:border-primary sm:text-sm" placeholder="{% trans 'Any specific requirements or information for this appointment' %}"></textarea>
+                </div>
+            
+                <!-- Form Actions -->
+                <div class="pt-5">
+                    <div class="flex justify-end">
+                        <button type="button" class="bg-white py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                            {% trans "Cancel" %}
+                        </button>
+                        <button type="submit" class="ml-3 inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                            {% trans "Request Upgrade" %}
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+    {% endif %}
+
     <!-- Upcoming Appointments -->
     <div class="mt-6 lg:mt-8 bg-white rounded-lg shadow-sm">
         <div class="px-4 py-5 sm:px-6 border-b border-gray-200">
@@ -38,21 +168,11 @@
             <table class="min-w-full divide-y divide-gray-200">
                 <thead class="bg-gray-50">
                     <tr>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            {% trans "Type" %}
-                        </th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            {% trans "Date" %}
-                        </th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            {% trans "Time" %}
-                        </th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            {% trans "Status" %}
-                        </th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            {% trans "Actions" %}
-                        </th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{% trans "Type" %}</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{% trans "Date" %}</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{% trans "Time" %}</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{% trans "Status" %}</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{% trans "Actions" %}</th>
                     </tr>
                 </thead>
                 <tbody class="bg-white divide-y divide-gray-200">
@@ -76,12 +196,11 @@
                                 {{ appointment.get_status_display }}
                             </span>
                         </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {% if appointment.status == 'pending' %}
-                                <a href="#" class="text-blue-600 hover:text-blue-900 mr-3">{% trans "Edit" %}</a>
-                                <a href="#" class="text-red-600 hover:text-red-900">{% trans "Cancel" %}</a>
-                            {% endif %}
+                        {% if request.user.is_superuser %}
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                            <a href="{% url 'appointment_detail' appointment.id %}" class="text-blue-600 hover:text-blue-900">{% trans "View Details" %}</a>
                         </td>
+                        {% endif %}
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -240,6 +359,9 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {
+        const searchForm = document.querySelector('form[method="GET"]');
+        const appointmentsTableBody = document.getElementById('appointments_table_body');
+        
         const dateInput = document.getElementById('appointment_date');
         
         // Set minimum date to today
@@ -273,6 +395,28 @@
             // Add new slots based on server response
             // For now, we'll keep the existing hardcoded slots
         }
+
+
+        searchForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const formData = new FormData(searchForm);
+            const searchParams = new URLSearchParams(formData).toString();
+
+            fetch(`{% url 'appointments' %}?${searchParams}`, {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.text())
+            .then(html => {
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(html, 'text/html');
+                const newTableBody = doc.getElementById('appointments_table_body');
+                appointmentsTableBody.innerHTML = newTableBody.innerHTML;
+            })
+            .catch(error => console.error('Error:', error));
+        });
     });
 </script>
 {% endblock dashboard_content %}
