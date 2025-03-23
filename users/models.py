@@ -128,6 +128,7 @@ class Ride(models.Model):
     code = models.CharField(max_length=6, unique=True, blank=True)
     status = models.CharField(max_length=20, choices=RIDE_STATUS_CHOICES, default='requested')
     created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     def generate_code(self):
         """Generate a random 6-digit code."""
@@ -141,6 +142,13 @@ class Ride(models.Model):
         try:
             return self.review
         except RideReview.DoesNotExist:
+            return None
+
+    @property
+    def driver_behavior_rating(self):
+        try:
+            return self.driver_behavior_rating
+        except DriverBehaviorRating.DoesNotExist:
             return None
 
     def assign_random_driver(self):
@@ -175,6 +183,42 @@ class Ride(models.Model):
             # Combine ratings (e.g., 70% user rating, 30% drowsiness score)
             self.driver.average_rating = (avg_user_rating * 0.7) + (avg_drowsiness_score * 0.3)
             self.driver.save()  # Save the updated average_rating in the Driver model
+    
+    def calculate_driver_behavior_rating(self):
+    # Get all drowsiness alerts for this ride
+        alerts = DrowsinessAlert.objects.filter(
+            driver=self.driver,
+            timestamp__gte=self.created_at,
+        )
+
+        if alerts.exists():
+            # Calculate the average drowsiness score
+            total_alerts = alerts.count()
+            total_drowsiness_score = sum(alert.drowsiness_score for alert in alerts)
+            average_drowsiness_score = total_drowsiness_score / total_alerts
+
+            # Map the average drowsiness score to a rating (1 to 5 stars)
+            # Lower average drowsiness score = better rating
+            if average_drowsiness_score <= 0.15:
+                rating = 5.0  # Excellent
+            elif average_drowsiness_score <= 0.20:
+                rating = 4.0  # Good
+            elif average_drowsiness_score <= 0.25:
+                rating = 3.0  # Average
+            elif average_drowsiness_score <= 0.30:
+                rating = 2.0  # Poor
+            else:
+                rating = 1.0  # Very Poor
+        else:
+            # If no alerts, assume perfect behavior
+            rating = 5.0
+
+        # Save the rating
+        DriverBehaviorRating.objects.update_or_create(
+            ride=self,
+            defaults={'rating': rating}
+        )
+        return rating
 
 class RideReview(models.Model):
     ride = models.OneToOneField(Ride, on_delete=models.CASCADE, related_name='review')
@@ -213,3 +257,24 @@ class DriverBehavior(models.Model):
 
     def __str__(self):
         return f"Behavior for {self.driver.full_name} at {self.timestamp}"
+    
+class DrowsinessAlert(models.Model):
+    driver = models.ForeignKey(Driver, on_delete=models.CASCADE, related_name='drowsiness_alerts')
+    blink_rate = models.FloatField()
+    yawn_frequency = models.FloatField()
+    head_pose = models.CharField(max_length=50)
+    drowsiness_score = models.FloatField()
+    alert_level = models.CharField(max_length=50)
+    timestamp = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Alert for {self.driver.full_name} at {self.timestamp}"
+    
+class DriverBehaviorRating(models.Model):
+    ride = models.OneToOneField(Ride, on_delete=models.CASCADE, related_name='driver_behavior_rating')
+    rating = models.FloatField(default=5.0)  # Default rating is 5.0 (good behavior)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"Rating for Ride {self.ride.id}: {self.rating}"

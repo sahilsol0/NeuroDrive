@@ -1,9 +1,10 @@
 import json
+import logging
 import os
 import re
 from datetime import datetime, timedelta
 from django.utils import timezone
-from django.http import JsonResponse
+from django.http import JsonResponse, StreamingHttpResponse
 from django.db.models import Q
 from django.shortcuts import get_object_or_404, render, redirect
 from django.contrib.auth.decorators import login_required, user_passes_test
@@ -12,7 +13,7 @@ from django.contrib import messages
 from django.core.exceptions import PermissionDenied
 from NeuroDrive2 import settings
 from users.forms import DriverUpdateForm, RideBookingForm, RideReviewForm
-from users.models import Appointment, CustomUser, Driver, DriverBehavior, Ride, RideReview
+from users.models import Appointment, CustomUser, Driver, DriverBehavior, DrowsinessAlert, Ride, RideReview
 from django.views.generic import ListView, UpdateView, DeleteView
 from django.urls import reverse_lazy
 from django.shortcuts import render
@@ -467,7 +468,15 @@ def ride_status(request, ride_id):
     except RideReview.DoesNotExist:
         review = None
 
-    return render(request, 'dashboard/rides/ride_status.html', {'ride': ride, 'review': review})
+    # Add driver_id to the context
+    driver_id = ride.driver.id if ride.driver else None
+    print(driver_id)
+
+    return render(request, 'dashboard/rides/ride_status.html', {
+        'ride': ride,
+        'review': review,
+        'driver_id': driver_id,  # Pass driver_id to the template
+    })
 
 @login_required
 def my_rides_view(request):
@@ -562,3 +571,78 @@ def receive_drowsiness_data(request):
         )
         return JsonResponse({'status': 'success'})
     return JsonResponse({'status': 'error', 'message': 'Invalid request method'}, status=400)
+
+logger = logging.getLogger(__name__)
+
+@csrf_exempt
+def drowsiness_alert(request):
+    if request.method == 'POST':
+        try:
+            # Log the raw request body
+            logger.info(f"Received request data: {request.body}")
+
+            data = json.loads(request.body)
+            logger.info(f"Parsed request data: {data}")
+
+            # Validate required fields
+            required_fields = ['driver_id', 'blink_rate', 'yawn_frequency', 'head_pose', 'drowsiness_score', 'alert_level']
+            for field in required_fields:
+                if field not in data:
+                    logger.error(f"Missing required field: {field}")
+                    return JsonResponse({'status': 'error', 'message': f'Missing required field: {field}'}, status=400)
+
+            driver_id = data.get('driver_id')
+            blink_rate = data.get('blink_rate')
+            yawn_frequency = data.get('yawn_frequency')
+            head_pose = data.get('head_pose')
+            drowsiness_score = data.get('drowsiness_score')
+            alert_level = data.get('alert_level')
+
+            # Validate driver_id
+            try:
+                driver = Driver.objects.get(id=driver_id)
+            except Driver.DoesNotExist:
+                logger.error(f"Driver with id {driver_id} does not exist")
+                return JsonResponse({'status': 'error', 'message': f'Driver with id {driver_id} does not exist'}, status=400)
+
+            # Create the drowsiness alert
+            alert = DrowsinessAlert.objects.create(
+                driver=driver,
+                blink_rate=blink_rate,
+                yawn_frequency=yawn_frequency,
+                head_pose=head_pose,
+                drowsiness_score=drowsiness_score,
+                alert_level=alert_level,
+            )
+
+            # Find the active ride for this driver
+            active_ride = Ride.objects.filter(
+                driver=driver,
+                status__in=['assigned', 'in_progress'],
+                created_at__lte=alert.timestamp,
+            ).first()
+
+            if active_ride:
+                # Update the driver behavior rating for the ride
+                active_ride.calculate_driver_behavior_rating()
+
+            return JsonResponse({'status': 'success'}, status=200)
+        except json.JSONDecodeError as e:
+            logger.error(f"Invalid JSON data: {e}")
+            return JsonResponse({'status': 'error', 'message': 'Invalid JSON data'}, status=400)
+        except Exception as e:
+            logger.error(f"Unexpected error: {e}")
+            return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+    return JsonResponse({'status': 'error', 'message': 'Invalid request method'}, status=405)
+
+def sse_drowsiness_alerts(request, driver_id):
+    def event_stream():
+        last_id = None
+        while True:
+            alerts = DrowsinessAlert.objects.filter(driver_id=driver_id)
+            if last_id:
+                alerts = alerts.filter(id__gt=last_id)
+            for alert in alerts:
+                yield f"data: {json.dumps({'alert_level': alert.alert_level, 'drowsiness_score': alert.drowsiness_score})}\n\n"
+                last_id = alert.id
+    return StreamingHttpResponse(event_stream(), content_type='text/event-stream')

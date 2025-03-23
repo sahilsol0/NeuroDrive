@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.urls import include, path
 
-from .views import DriverDeleteView, DriverListView, DriverUpdateView, LandingView, appointment_detail, appointments, approve_appointment, book_appointment, cancel_ride, complete_ride, confirm_driver_registration, estimate_fare_view, home, leaderboard, my_rides_view, receive_drowsiness_data, register_driver, reject_appointment, request_ride, ride_status, search_drivers, search_users, start_ride, submit_review, success_driver_registration, verify_driver_registration
+from .views import DriverDeleteView, DriverListView, DriverUpdateView, LandingView, appointment_detail, appointments, approve_appointment, book_appointment, cancel_ride, complete_ride, confirm_driver_registration, drowsiness_alert, estimate_fare_view, home, leaderboard, my_rides_view, receive_drowsiness_data, register_driver, reject_appointment, request_ride, ride_status, search_drivers, search_users, sse_drowsiness_alerts, start_ride, submit_review, success_driver_registration, verify_driver_registration
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -34,7 +34,10 @@ urlpatterns = [
     path('search-users/', search_users, name='search_users'),
     path('search-users/', search_users, name='search_users'),
     path('estimate-fare/', estimate_fare_view, name='estimate_fare'),
+
     path('api/drowsiness-data/', receive_drowsiness_data, name='receive_drowsiness_data'),
+    path('api/drowsiness-alert/', drowsiness_alert, name='drowsiness_alert'),
+    path('sse/drowsiness-alerts/<int:driver_id>/', sse_drowsiness_alerts, name='sse_drowsiness_alerts'),
 
     path('accounts/', include('allauth.urls')),
 ]

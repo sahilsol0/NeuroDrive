@@ -12,6 +12,7 @@
 
 {% block content %}
 <div class="flex flex-col h-screen bg-gray-100">
+    <div id="alert-container" class="fixed top-4 right-4 space-y-4 z-50"></div>
 	<!-- Mobile Header -->
     <header class="lg:hidden bg-white">
         <div class="flex items-center justify-between px-4 py-4">
@@ -232,6 +233,54 @@
 </div>
 
 <script>
+    const alertContainer = document.getElementById('alert-container');
+
+    const driverId = {{ driver_id }};
+
+    if (driverId) {
+        const eventSource = new EventSource(`/sse/drowsiness-alerts/${driverId}/`);
+
+        eventSource.onmessage = function(event) {
+            const data = JSON.parse(event.data);
+            if (data.alert_level === 'HIGH' || data.alert_level === 'MEDIUM' || data.alert_level === 'LOW') {
+                const alertDiv = document.createElement('div');
+                alertDiv.className = `p-4 rounded-lg shadow-md animate__animated animate__fadeInRight ${
+                    data.alert_level === 'HIGH' ? 'bg-red-100 border-l-4 border-red-500 text-red-700' :
+                    data.alert_level === 'MEDIUM' ? 'bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700' :
+                    'bg-blue-100 border-l-4 border-blue-500 text-blue-700'
+                }`;
+                alertDiv.innerHTML = `
+                    <div class="flex items-center">
+                        <i class="fas ${
+                            data.alert_level === 'HIGH' ? 'fa-exclamation-triangle' :
+                            data.alert_level === 'MEDIUM' ? 'fa-exclamation-circle' :
+                            'fa-info-circle'
+                        } mr-2"></i>
+                        <p class="font-bold">Drowsiness Alert!</p>
+                    </div>
+                    <p>Alert Level: ${data.alert_level}</p>
+                    <p>EAR: ${data.drowsiness_score.toFixed(2)}</p>
+                `;
+
+                alertContainer.appendChild(alertDiv);
+
+                setTimeout(() => {
+                    alertDiv.classList.remove('animate__fadeInRight');
+                    alertDiv.classList.add('animate__fadeOutRight');
+                    setTimeout(() => {
+                        alertDiv.remove();
+                    }, 500);
+                }, 5000);
+            }
+        };
+
+        eventSource.onerror = function(event) {
+            console.error("EventSource failed:", event);
+        };
+    } else {
+        console.error("No driver ID found for the current ride.");
+    }
+
     // Initialize Lucide icons
     lucide.createIcons();
 
