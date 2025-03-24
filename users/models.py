@@ -55,7 +55,12 @@ class Driver(models.Model):
     full_name = models.CharField(max_length=100)
     dob = models.DateField()
     address = models.TextField(blank=True, null=True)
-    average_rating = models.FloatField(default=0.0)  # Add average_rating here
+    average_rating = models.FloatField(default=0.0)
+    # behavior_rating = models.FloatField(default=0.0)  # New field for behavior rating
+    # total_rides = models.IntegerField(default=0)  # New field for total rides
+    # active_rate = models.FloatField(default=0.0)  # New field for active rate
+    # last_ride = models.DateField(null=True, blank=True)  # New field for last ride date
+    # total_earnings = models.FloatField(default=0.0)  # New field for total earnings
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -185,9 +190,9 @@ class Ride(models.Model):
             self.driver.save()  # Save the updated average_rating in the Driver model
     
     def calculate_driver_behavior_rating(self):
-    # Get all drowsiness alerts for this ride
+        # Get all drowsiness alerts for this ride
         alerts = DrowsinessAlert.objects.filter(
-            driver=self.driver,
+            ride=self,
             timestamp__gte=self.created_at,
         )
 
@@ -223,11 +228,12 @@ class Ride(models.Model):
 class RideReview(models.Model):
     ride = models.OneToOneField(Ride, on_delete=models.CASCADE, related_name='review')
     driver_rating = models.IntegerField(choices=[(i, i) for i in range(1, 6)], null=False)  # Ensure not nullable
+    behavior_rating = models.FloatField(default=0.0)
     passenger_comment = models.TextField(blank=True, null=True)  # Passenger's comment
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"Review for Ride {self.ride_id}"
+        return f"Review for Ride #{self.ride_id}"
 
 # Helper method to book a ride
 def book_ride(passenger, pickup_location, dropoff_location, pickup_time):
@@ -259,13 +265,14 @@ class DriverBehavior(models.Model):
         return f"Behavior for {self.driver.full_name} at {self.timestamp}"
     
 class DrowsinessAlert(models.Model):
-    driver = models.ForeignKey(Driver, on_delete=models.CASCADE, related_name='drowsiness_alerts')
+    ride = models.ForeignKey(Ride, on_delete=models.CASCADE, related_name='drowsiness_alerts', null=True, blank=True)  # Link to Ride
+    driver = models.ForeignKey(Driver, on_delete=models.CASCADE, related_name='drowsiness_alerts')  # Link to Driver
     blink_rate = models.FloatField()
     yawn_frequency = models.FloatField()
     head_pose = models.CharField(max_length=50)
     drowsiness_score = models.FloatField()
     alert_level = models.CharField(max_length=50)
-    timestamp = models.DateTimeField(auto_now_add=True)
+    timestamp = models.DateTimeField(auto_now_add=True, db_index=True)
 
     def __str__(self):
         return f"Alert for {self.driver.full_name} at {self.timestamp}"

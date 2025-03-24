@@ -44,6 +44,18 @@
                 </div>
             </div>
 
+            <!-- Ride Duration (Visible if ride is completed) -->
+            {% if ride.status == 'completed' and ride_duration %}
+            <div class="mt-6">
+                <h3 class="text-sm font-medium text-gray-500 mb-2">
+                    {% trans "Ride Duration" %}
+                </h3>
+                <p class="text-gray-900 font-semibold">
+                    {{ ride_duration }}
+                </p>
+            </div>
+            {% endif %}
+
             <!-- Secret Code (Visible only to the passenger) -->
             {% if ride.passenger == request.user and not ride.status == 'completed' %}
             <div class="mt-6">
@@ -101,6 +113,31 @@
                 <p class="text-gray-900">
                     {{ ride.special_requirements }}
                 </p>
+            </div>
+            {% endif %}
+
+            <!-- Alert Summary (Visible if ride is in_progress or completed) -->
+            {% if ride.status == 'in_progress' or ride.status == 'completed' %}
+            <div class="mt-6">
+                <h3 class="text-sm font-medium text-gray-500 mb-2">
+                    {% trans "Drowsiness Alerts Summary" %}
+                </h3>
+                <div class="bg-gray-50 p-4 rounded-lg">
+                    <div class="grid grid-cols-3 gap-4">
+                        <div class="text-center">
+                            <p class="text-lg font-bold text-red-700">{{ high_alerts }}</p>
+                            <p class="text-sm text-gray-500">High Alerts</p>
+                        </div>
+                        <div class="text-center">
+                            <p class="text-lg font-bold text-yellow-700">{{ medium_alerts }}</p>
+                            <p class="text-sm text-gray-500">Medium Alerts</p>
+                        </div>
+                        <div class="text-center">
+                            <p class="text-lg font-bold text-blue-700">{{ low_alerts }}</p>
+                            <p class="text-sm text-gray-500">Low Alerts</p>
+                        </div>
+                    </div>
+                </div>
             </div>
             {% endif %}
 

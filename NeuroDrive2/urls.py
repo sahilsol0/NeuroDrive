@@ -37,7 +37,7 @@ urlpatterns = [
 
     path('api/drowsiness-data/', receive_drowsiness_data, name='receive_drowsiness_data'),
     path('api/drowsiness-alert/', drowsiness_alert, name='drowsiness_alert'),
-    path('sse/drowsiness-alerts/<int:driver_id>/', sse_drowsiness_alerts, name='sse_drowsiness_alerts'),
+    path('sse/drowsiness-alerts/<int:ride_id>/', sse_drowsiness_alerts, name='sse_drowsiness_alerts'),
 
     path('accounts/', include('allauth.urls')),
 ]

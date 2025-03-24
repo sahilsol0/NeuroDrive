@@ -3,9 +3,10 @@ import logging
 import os
 import re
 from datetime import datetime, timedelta
+import time
 from django.utils import timezone
 from django.http import JsonResponse, StreamingHttpResponse
-from django.db.models import Q
+from django.db.models import Count, Avg, Q, Max, Sum, F
 from django.shortcuts import get_object_or_404, render, redirect
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.views import View
@@ -13,11 +14,10 @@ from django.contrib import messages
 from django.core.exceptions import PermissionDenied
 from NeuroDrive2 import settings
 from users.forms import DriverUpdateForm, RideBookingForm, RideReviewForm
-from users.models import Appointment, CustomUser, Driver, DriverBehavior, DrowsinessAlert, Ride, RideReview
+from users.models import Appointment, CustomUser, Driver, DriverBehavior, DriverBehaviorRating, DrowsinessAlert, Ride, RideReview
 from django.views.generic import ListView, UpdateView, DeleteView
 from django.urls import reverse_lazy
 from django.shortcuts import render
-from django.db.models import Count, Avg
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 
@@ -28,6 +28,20 @@ def is_admin(user):
 class LandingView(View):
     def get(self, request):
         return render(request, "landing.html", context={})
+    
+def format_timedelta(duration):
+    """Format a timedelta object into a user-friendly string."""
+    total_seconds = int(duration.total_seconds())
+    hours = total_seconds // 3600
+    minutes = (total_seconds % 3600) // 60
+    seconds = total_seconds % 60
+
+    if hours > 0:
+        return f"{hours} hour{'s' if hours > 1 else ''} {minutes} minute{'s' if minutes > 1 else ''}"
+    elif minutes > 0:
+        return f"{minutes} minute{'s' if minutes > 1 else ''}"
+    else:
+        return f"{seconds} second{'s' if seconds > 1 else ''}"
 
 def home(request):
     context = {}
@@ -53,11 +67,15 @@ def home(request):
     return render(request, 'dashboard/home.html', context)
 
 def leaderboard(request):
-    # Fetch drivers with their ratings, number of rides, and active rate
+    # Fetch drivers with their ratings, number of rides, active rate, and behavior ratings
     drivers = Driver.objects.annotate(
-        total_rides=Count('driver_rides', filter=Q(driver_rides__status='completed')),
+        total_rides_count=Count('driver_rides', filter=Q(driver_rides__status='completed')),  # Renamed to total_rides_count
         avg_rating=Avg('driver_rides__review__driver_rating'),
-    ).order_by('-avg_rating')  # Sort by average rating (highest first)
+        avg_behavior_rating=Avg('driver_rides__driver_behavior_rating__rating'),  # Traverse Ride → DriverBehaviorRating
+        last_ride_date=Max('driver_rides__created_at', filter=Q(driver_rides__status='completed')),  # Renamed to last_ride_date
+    ).annotate(
+        combined_score=(F('avg_rating') * 0.7 + F('avg_behavior_rating') * 0.3)  # Combined score (equal weight)
+    ).order_by('-combined_score', '-avg_behavior_rating')  # Sort by combined score, then by behavior rating
 
     # Calculate active rate for each driver
     for driver in drivers:
@@ -65,15 +83,20 @@ def leaderboard(request):
         total_completed_rides = driver.driver_rides.filter(status='completed').count()
         driver.active_rate = (total_completed_rides / total_assigned_rides * 100) if total_assigned_rides > 0 else 0
 
-    # Calculate the overall average rating for all drivers
+    # Calculate the overall average rating and behavior rating for all drivers
     overall_avg_rating = Driver.objects.aggregate(
         overall_avg_rating=Avg('driver_rides__review__driver_rating')
     )['overall_avg_rating'] or 0
+
+    overall_behavior_rating = DriverBehaviorRating.objects.aggregate(
+        overall_behavior_rating=Avg('rating')
+    )['overall_behavior_rating'] or 0
 
     context = {
         'drivers': drivers,
         'active_drivers_count': drivers.filter(user__is_active=True).count(),
         'average_rating': overall_avg_rating,  # Use the calculated overall average rating
+        'average_behavior_rating': overall_behavior_rating,  # Use the calculated overall behavior rating
     }
     return render(request, 'dashboard/leaderboard.html', context)
 
@@ -408,8 +431,16 @@ def start_ride(request, ride_id):
     if request.method == 'POST':
         code = request.POST.get('code')
         if code == ride.code:
+            # Start the ride
             ride.status = 'in_progress'
             ride.save()
+
+            # Create a DriverBehaviorRating record for this ride
+            DriverBehaviorRating.objects.update_or_create(
+                ride=ride,
+                defaults={'rating': 5.0}  # Default rating
+            )
+
             messages.success(request, "Ride started!")
             return redirect('ride_status', ride_id=ride.id)
         else:
@@ -436,6 +467,10 @@ def complete_ride(request, ride_id):
         # Update the ride status to 'completed'
         ride.status = 'completed'
         ride.save()
+
+        # Calculate and save the driver's behavior rating
+        ride.calculate_driver_behavior_rating()
+
         messages.success(request, "Ride completed successfully!")
         return redirect('ride_status', ride_id=ride.id)
 
@@ -468,14 +503,28 @@ def ride_status(request, ride_id):
     except RideReview.DoesNotExist:
         review = None
 
-    # Add driver_id to the context
-    driver_id = ride.driver.id if ride.driver else None
-    print(driver_id)
+    # Calculate alert counts for the ride (both in_progress and completed)
+    if ride.status in ['in_progress', 'completed']:
+        high_alerts = DrowsinessAlert.objects.filter(ride=ride, alert_level='HIGH').count()
+        medium_alerts = DrowsinessAlert.objects.filter(ride=ride, alert_level='MEDIUM').count()
+        low_alerts = DrowsinessAlert.objects.filter(ride=ride, alert_level='LOW').count()
+    else:
+        high_alerts = medium_alerts = low_alerts = 0
+
+    # Calculate and format ride duration if the ride is completed
+    ride_duration = None
+    if ride.status == 'completed':
+        duration = ride.updated_at - ride.created_at
+        ride_duration = format_timedelta(duration)
 
     return render(request, 'dashboard/rides/ride_status.html', {
         'ride': ride,
         'review': review,
-        'driver_id': driver_id,  # Pass driver_id to the template
+        'driver_id': ride.driver.id if ride.driver else None,
+        'high_alerts': high_alerts,  # Pass high alert count
+        'medium_alerts': medium_alerts,  # Pass medium alert count
+        'low_alerts': low_alerts,  # Pass low alert count
+        'ride_duration': ride_duration,  # Pass ride duration
     })
 
 @login_required
@@ -554,23 +603,35 @@ def submit_review(request, ride_id):
 @csrf_exempt
 def receive_drowsiness_data(request):
     if request.method == 'POST':
-        data = json.loads(request.body)
-        blink_rate = data.get('blink_rate')
-        yawn_frequency = data.get('yawn_frequency')
-        head_pose = data.get('head_pose')
-        drowsiness_score = data.get('drowsiness_score')
-        alert_level = data.get('alert_level')
-
-        # Save the data to the database
-        DriverBehavior.objects.create(
-            blink_rate=blink_rate,
-            yawn_frequency=yawn_frequency,
-            head_pose=head_pose,
-            drowsiness_score=drowsiness_score,
-            alert_level=alert_level,
-        )
-        return JsonResponse({'status': 'success'})
-    return JsonResponse({'status': 'error', 'message': 'Invalid request method'}, status=400)
+        try:
+            data = json.loads(request.body)
+            
+            # Get the driver instance
+            driver = Driver.objects.get(id=data['driver_id'])
+            
+            # Find active ride for this driver
+            active_ride = Ride.objects.filter(
+                driver=driver,
+                status__in=['assigned', 'in_progress']
+            ).first()
+            
+            # Create the alert
+            alert = DrowsinessAlert.objects.create(
+                ride=active_ride,  # Could be None if no active ride
+                driver=driver,
+                blink_rate=data['blink_rate'],
+                yawn_frequency=data['yawn_frequency'],
+                head_pose=data['head_pose'],
+                min_ear=data['min_ear'],  # Using min_ear instead of drowsiness_score
+                alert_level=data['alert_level']
+            )
+            
+            return JsonResponse({'status': 'success', 'alert_id': alert.id})
+            
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
+    
+    return JsonResponse({'status': 'error', 'message': 'Invalid method'}, status=405)
 
 logger = logging.getLogger(__name__)
 
@@ -578,19 +639,7 @@ logger = logging.getLogger(__name__)
 def drowsiness_alert(request):
     if request.method == 'POST':
         try:
-            # Log the raw request body
-            logger.info(f"Received request data: {request.body}")
-
             data = json.loads(request.body)
-            logger.info(f"Parsed request data: {data}")
-
-            # Validate required fields
-            required_fields = ['driver_id', 'blink_rate', 'yawn_frequency', 'head_pose', 'drowsiness_score', 'alert_level']
-            for field in required_fields:
-                if field not in data:
-                    logger.error(f"Missing required field: {field}")
-                    return JsonResponse({'status': 'error', 'message': f'Missing required field: {field}'}, status=400)
-
             driver_id = data.get('driver_id')
             blink_rate = data.get('blink_rate')
             yawn_frequency = data.get('yawn_frequency')
@@ -602,12 +651,21 @@ def drowsiness_alert(request):
             try:
                 driver = Driver.objects.get(id=driver_id)
             except Driver.DoesNotExist:
-                logger.error(f"Driver with id {driver_id} does not exist")
-                return JsonResponse({'status': 'error', 'message': f'Driver with id {driver_id} does not exist'}, status=400)
+                return JsonResponse({'status': 'error', 'message': 'Driver not found'}, status=400)
+
+            # Find the active ride for this driver
+            active_ride = Ride.objects.filter(
+                driver=driver,
+                status__in=['assigned', 'in_progress'],
+            ).first()
+
+            if not active_ride:
+                return JsonResponse({'status': 'error', 'message': 'No active ride found for this driver'}, status=400)
 
             # Create the drowsiness alert
             alert = DrowsinessAlert.objects.create(
                 driver=driver,
+                ride=active_ride,  # Link to the active ride
                 blink_rate=blink_rate,
                 yawn_frequency=yawn_frequency,
                 head_pose=head_pose,
@@ -615,34 +673,52 @@ def drowsiness_alert(request):
                 alert_level=alert_level,
             )
 
-            # Find the active ride for this driver
-            active_ride = Ride.objects.filter(
-                driver=driver,
-                status__in=['assigned', 'in_progress'],
-                created_at__lte=alert.timestamp,
-            ).first()
-
-            if active_ride:
-                # Update the driver behavior rating for the ride
-                active_ride.calculate_driver_behavior_rating()
+            # Recalculate and update the driver's behavior rating
+            active_ride.calculate_driver_behavior_rating()
 
             return JsonResponse({'status': 'success'}, status=200)
-        except json.JSONDecodeError as e:
-            logger.error(f"Invalid JSON data: {e}")
-            return JsonResponse({'status': 'error', 'message': 'Invalid JSON data'}, status=400)
         except Exception as e:
-            logger.error(f"Unexpected error: {e}")
             return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
     return JsonResponse({'status': 'error', 'message': 'Invalid request method'}, status=405)
 
-def sse_drowsiness_alerts(request, driver_id):
+@login_required
+def sse_drowsiness_alerts(request, ride_id):
+    # Verify the requesting user is the passenger of this ride
+    ride = get_object_or_404(Ride, id=ride_id, passenger=request.user)
+
     def event_stream():
         last_id = None
-        while True:
-            alerts = DrowsinessAlert.objects.filter(driver_id=driver_id)
-            if last_id:
-                alerts = alerts.filter(id__gt=last_id)
-            for alert in alerts:
-                yield f"data: {json.dumps({'alert_level': alert.alert_level, 'drowsiness_score': alert.drowsiness_score})}\n\n"
-                last_id = alert.id
-    return StreamingHttpResponse(event_stream(), content_type='text/event-stream')
+        try:
+            while True:
+                # Check if ride is still active
+                ride.refresh_from_db()
+                if ride.status not in ['assigned', 'in_progress']:
+                    break
+
+                # Get new alerts for this ride
+                query = DrowsinessAlert.objects.filter(ride_id=ride_id)
+                if last_id is not None:
+                    query = query.filter(id__gt=last_id)
+                
+                alerts = query.order_by('id')
+                
+                for alert in alerts:
+                    yield f"data: {json.dumps({
+                        'alert_level': alert.alert_level,
+                        'drowsiness_score': alert.drowsiness_score,
+                        'timestamp': alert.timestamp.isoformat()
+                    })}\n\n"
+                    last_id = alert.id
+                
+                # Add small delay to prevent tight looping
+                time.sleep(1)
+
+        except Exception as e:
+            print(f"SSE Error: {str(e)}")
+
+    response = StreamingHttpResponse(
+        event_stream(),
+        content_type='text/event-stream'
+    )
+    response['Cache-Control'] = 'no-cache'
+    return response
