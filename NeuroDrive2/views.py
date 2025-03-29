@@ -20,6 +20,7 @@ from django.urls import reverse_lazy
 from django.shortcuts import render
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
+from django.db.models.functions import TruncDay
 
 # Check if the user is an admin
 def is_admin(user):
@@ -42,6 +43,118 @@ def format_timedelta(duration):
         return f"{minutes} minute{'s' if minutes > 1 else ''}"
     else:
         return f"{seconds} second{'s' if seconds > 1 else ''}"
+    
+@login_required
+@user_passes_test(is_admin)
+def admin_dashboard(request):
+    # User metrics
+    total_users = CustomUser.objects.count()
+    total_drivers = Driver.objects.count()
+    
+    # Calculate user growth (last 30 days vs previous 30 days)
+    today = timezone.now().date()
+    last_30_start = today - timedelta(days=30)
+    prev_30_start = last_30_start - timedelta(days=30)
+    
+    current_users = CustomUser.objects.filter(date_joined__gte=last_30_start).count()
+    prev_users = CustomUser.objects.filter(date_joined__gte=prev_30_start, date_joined__lt=last_30_start).count()
+    user_growth = round(((current_users - prev_users) / prev_users * 100) if prev_users > 0 else 100, 1)
+    
+    # Driver growth
+    current_drivers = Driver.objects.filter(created_at__gte=last_30_start).count()
+    prev_drivers = Driver.objects.filter(created_at__gte=prev_30_start, created_at__lt=last_30_start).count()
+    driver_growth = round(((current_drivers - prev_drivers) / prev_drivers * 100) if prev_drivers > 0 else 100, 1)
+    
+    # Ride metrics
+    pending_approvals_count = Appointment.objects.filter(status='pending').count()
+    active_rides = Ride.objects.filter(status__in=['assigned', 'in_progress']).count()
+    
+    # Calculate pending change
+    current_pending = pending_approvals_count
+    prev_pending = Appointment.objects.filter(
+        created_at__gte=prev_30_start, 
+        created_at__lt=last_30_start,
+        status='pending'
+    ).count()
+    pending_change = round(((current_pending - prev_pending) / prev_pending * 100) if prev_pending > 0 else 0, 1)
+    
+    # Ride growth
+    current_rides = Ride.objects.filter(created_at__gte=last_30_start).count()
+    prev_rides = Ride.objects.filter(created_at__gte=prev_30_start, created_at__lt=last_30_start).count()
+    ride_growth = round(((current_rides - prev_rides) / prev_rides * 100) if prev_rides > 0 else 100, 1)
+    
+    # User growth chart data (last 30 days)
+    user_growth_data = (
+        CustomUser.objects
+        .filter(date_joined__gte=last_30_start)
+        .annotate(day=TruncDay('date_joined'))
+        .values('day')
+        .annotate(count=Count('id')))
+    
+    user_growth_labels = []
+    user_growth_counts = []
+    
+    for day in (today - timedelta(days=n) for n in range(29, -1, -1)):
+        entry = next((item for item in user_growth_data if item['day'] == day), None)
+        user_growth_labels.append(day.strftime('%b %d'))
+        user_growth_counts.append(entry['count'] if entry else 0)
+    
+    # Ride status distribution
+    ride_status_data = []
+    ride_status_labels = []
+    
+    for status, label in Ride.RIDE_STATUS_CHOICES:
+        count = Ride.objects.filter(status=status).count()
+        ride_status_data.append(count)
+        ride_status_labels.append(label)
+    
+    # Top performing drivers
+    top_drivers = (
+        Driver.objects
+        .annotate(
+            total_rides=Count('driver_rides'),
+            completed_rides=Count('driver_rides', filter=Q(driver_rides__status='completed')),
+            high_alerts=Count('drowsiness_alerts', filter=Q(drowsiness_alerts__alert_level='HIGH')),
+            medium_alerts=Count('drowsiness_alerts', filter=Q(drowsiness_alerts__alert_level='MEDIUM')),
+            low_alerts=Count('drowsiness_alerts', filter=Q(drowsiness_alerts__alert_level='LOW')),
+            avg_behavior_rating=Avg('driver_rides__driver_behavior_rating__rating')
+        )
+        .order_by('-average_rating')[:10]
+    )
+
+    
+    # Recent alerts
+    recent_alerts = DrowsinessAlert.objects.select_related('driver', 'ride').order_by('-timestamp')[:10]
+    
+    # Add recent appointments for the approvals section
+    recent_appointments = (
+        Appointment.objects
+        .select_related('user')
+        .order_by('-created_at')[:5]
+    )
+
+    context = {
+        'total_users': total_users,
+        'total_drivers': total_drivers,
+        'pending_approvals_count': pending_approvals_count,
+        'active_rides': active_rides,
+        'user_growth': user_growth,
+        'driver_growth': driver_growth,
+        'pending_change': pending_change,
+        'ride_growth': ride_growth,
+        'user_growth_labels': json.dumps(user_growth_labels),
+        'user_growth_data': json.dumps(user_growth_counts),
+        'ride_status_labels': json.dumps(ride_status_labels),
+        'ride_status_data': json.dumps(ride_status_data),
+        'top_drivers': top_drivers,
+        'recent_alerts': recent_alerts,
+    }
+
+    context.update({
+        'recent_appointments': recent_appointments,
+    })
+    
+    return render(request, 'dashboard/admin_dashboard.html', context)
 
 def home(request):
     context = {}
