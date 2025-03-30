@@ -16,22 +16,46 @@
                 <form method="post" class="space-y-6">
                     {% csrf_token %}
                     
-                    <!-- Range Slider for Rating -->
+                    <!-- Star Rating System -->
                     <div class="mb-6">
                         <label class="block text-sm font-medium text-gray-700 mb-2">
-                            {% trans "Rate your experience (1-5)" %}
+                            {% trans "Rate your experience" %}
                         </label>
-                        <div class="flex items-center space-x-4">
-                            <input type="range" 
-                                   id="rating-slider" 
-                                   name="driver_rating" 
-                                   min="1" 
-                                   max="5" 
-                                   step="1" 
-                                   value="1" 
-                                   class="w-full h-1 bg-gray-100 rounded-lg appearance-none cursor-pointer"
-                                   required>
-                            <span id="rating-value" class="text-2xl font-medium text-gray-800">1</span>
+                        <div class="star-rating flex items-center gap-1">
+                            <input type="radio" id="star1" name="driver_rating" value="1" class="sr-only" required>
+                            <input type="radio" id="star2" name="driver_rating" value="2" class="sr-only">
+                            <input type="radio" id="star3" name="driver_rating" value="3" class="sr-only">
+                            <input type="radio" id="star4" name="driver_rating" value="4" class="sr-only">
+                            <input type="radio" id="star5" name="driver_rating" value="5" class="sr-only">
+                            
+                            <div class="flex">
+                                <label for="star1" class="star-label cursor-pointer text-4xl" title="1 star">
+                                    <svg class="w-8 h-8 star-icon text-gray-300" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24">
+                                        <path d="M20.924 7.625a1.523 1.523 0 0 0-1.238-1.044l-5.051-.734-2.259-4.577a1.534 1.534 0 0 0-2.752 0L7.365 5.847l-5.051.734A1.535 1.535 0 0 0 1.463 9.2l3.656 3.563-.863 5.031a1.532 1.532 0 0 0 2.226 1.616L11 17.033l4.518 2.375a1.534 1.534 0 0 0 2.226-1.617l-.863-5.03L20.537 9.2a1.523 1.523 0 0 0 .387-1.575Z"/>
+                                    </svg>
+                                </label>
+                                <label for="star2" class="star-label cursor-pointer text-4xl" title="2 stars">
+                                    <svg class="w-8 h-8 star-icon text-gray-300" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24">
+                                        <path d="M20.924 7.625a1.523 1.523 0 0 0-1.238-1.044l-5.051-.734-2.259-4.577a1.534 1.534 0 0 0-2.752 0L7.365 5.847l-5.051.734A1.535 1.535 0 0 0 1.463 9.2l3.656 3.563-.863 5.031a1.532 1.532 0 0 0 2.226 1.616L11 17.033l4.518 2.375a1.534 1.534 0 0 0 2.226-1.617l-.863-5.03L20.537 9.2a1.523 1.523 0 0 0 .387-1.575Z"/>
+                                    </svg>
+                                </label>
+                                <label for="star3" class="star-label cursor-pointer text-4xl" title="3 stars">
+                                    <svg class="w-8 h-8 star-icon text-gray-300" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24">
+                                        <path d="M20.924 7.625a1.523 1.523 0 0 0-1.238-1.044l-5.051-.734-2.259-4.577a1.534 1.534 0 0 0-2.752 0L7.365 5.847l-5.051.734A1.535 1.535 0 0 0 1.463 9.2l3.656 3.563-.863 5.031a1.532 1.532 0 0 0 2.226 1.616L11 17.033l4.518 2.375a1.534 1.534 0 0 0 2.226-1.617l-.863-5.03L20.537 9.2a1.523 1.523 0 0 0 .387-1.575Z"/>
+                                    </svg>
+                                </label>
+                                <label for="star4" class="star-label cursor-pointer text-4xl" title="4 stars">
+                                    <svg class="w-8 h-8 star-icon text-gray-300" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24">
+                                        <path d="M20.924 7.625a1.523 1.523 0 0 0-1.238-1.044l-5.051-.734-2.259-4.577a1.534 1.534 0 0 0-2.752 0L7.365 5.847l-5.051.734A1.535 1.535 0 0 0 1.463 9.2l3.656 3.563-.863 5.031a1.532 1.532 0 0 0 2.226 1.616L11 17.033l4.518 2.375a1.534 1.534 0 0 0 2.226-1.617l-.863-5.03L20.537 9.2a1.523 1.523 0 0 0 .387-1.575Z"/>
+                                    </svg>
+                                </label>
+                                <label for="star5" class="star-label cursor-pointer text-4xl" title="5 stars">
+                                    <svg class="w-8 h-8 star-icon text-gray-300" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24">
+                                        <path d="M20.924 7.625a1.523 1.523 0 0 0-1.238-1.044l-5.051-.734-2.259-4.577a1.534 1.534 0 0 0-2.752 0L7.365 5.847l-5.051.734A1.535 1.535 0 0 0 1.463 9.2l3.656 3.563-.863 5.031a1.532 1.532 0 0 0 2.226 1.616L11 17.033l4.518 2.375a1.534 1.534 0 0 0 2.226-1.617l-.863-5.03L20.537 9.2a1.523 1.523 0 0 0 .387-1.575Z"/>
+                                    </svg>
+                                </label>
+                            </div>
+                            <div id="rating-text" class="ml-3 text-lg font-medium text-gray-700">Not rated</div>
                         </div>
                         <p id="rating-error" class="mt-2 text-sm text-red-600 hidden">
                             {% trans "Please select a rating." %}
@@ -67,26 +91,85 @@
     </div>
 </div>
 
-<!-- JavaScript for Range Slider -->
+<!-- JavaScript for Star Rating -->
 <script>
     document.addEventListener('DOMContentLoaded', function () {
-        const ratingSlider = document.getElementById('rating-slider');
-        const ratingValue = document.getElementById('rating-value');
+        const starLabels = document.querySelectorAll('.star-label');
+        const starIcons = document.querySelectorAll('.star-icon');
+        const ratingInputs = document.querySelectorAll('input[name="driver_rating"]');
+        const ratingText = document.getElementById('rating-text');
         const ratingError = document.getElementById('rating-error');
-
-        // Update the displayed rating value when the slider changes
-        ratingSlider.addEventListener('input', function () {
-            ratingValue.textContent = this.value;
+        const ratingTexts = ["Not rated", "Poor", "Fair", "Good", "Very Good", "Excellent"];
+        let currentRating = 0;
+        
+        // Initialize any existing rating (if editing)
+        function initializeRating() {
+            for (let i = 0; i < ratingInputs.length; i++) {
+                if (ratingInputs[i].checked) {
+                    currentRating = parseInt(ratingInputs[i].value);
+                    break;
+                }
+            }
+            updateStars();
+        }
+        
+        // Update stars based on currentRating
+        function updateStars() {
+            starIcons.forEach((star, index) => {
+                if (index < currentRating) {
+                    star.classList.remove('text-gray-300');
+                    star.classList.add('text-primary');
+                } else {
+                    star.classList.remove('text-primary');
+                    star.classList.add('text-gray-300');
+                }
+            });
+            
+            ratingText.textContent = ratingTexts[currentRating];
+        }
+        
+        // Handle hover effects
+        starLabels.forEach((label, index) => {
+            label.addEventListener('mouseenter', () => {
+                const hoverRating = index + 1;
+                
+                starIcons.forEach((star, starIndex) => {
+                    if (starIndex <= index) {
+                        star.classList.remove('text-gray-300');
+                        star.classList.add('text-primary');
+                    } else {
+                        star.classList.remove('text-primary');
+                        star.classList.add('text-gray-300');
+                    }
+                });
+                
+                ratingText.textContent = ratingTexts[hoverRating];
+            });
+            
+            label.addEventListener('mouseleave', () => {
+                updateStars();
+            });
+            
+            // Handle click
+            label.addEventListener('click', () => {
+                currentRating = index + 1;
+                ratingInputs[index].checked = true;
+                updateStars();
+                ratingError.classList.add('hidden');
+            });
         });
-
-        // Validate rating on form submission
+        
+        // Validate on form submission
         const form = document.querySelector('form');
-        form.addEventListener('submit', function (e) {
-            if (ratingSlider.value === '0') {
+        form.addEventListener('submit', function(e) {
+            if (currentRating === 0) {
                 e.preventDefault();
                 ratingError.classList.remove('hidden');
             }
         });
+        
+        // Initialize
+        initializeRating();
     });
 </script>
 {% endblock dashboard_content %}

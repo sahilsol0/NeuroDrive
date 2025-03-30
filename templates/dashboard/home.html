@@ -8,7 +8,7 @@
     <!-- Role-Specific Alerts -->
     {% if user.is_superuser %}
         {% if pending_approvals_count > 0 %}
-            <div class="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 mb-4" role="alert">
+            <div class="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 mb-4 rounded-xl shadow-xl" role="alert">
                 <p class="font-bold">{% trans "Pending Approvals" %}</p>
                 <p>{% blocktrans count counter=pending_approvals_count %}You have {{ counter }} appointment waiting for approval.{% plural %}You have {{ counter }} appointments waiting for approval.{% endblocktrans %}</p>
                 <a href="{% url 'appointments' %}" class="text-yellow-700 underline">{% trans "Review Appointments" %}</a>
@@ -16,14 +16,14 @@
         {% endif %}
     {% elif user.is_driver %}
         <!-- Driver Alerts -->
-        <div class="bg-blue-100 border-l-4 border-blue-500 text-blue-700 p-4 mb-4" role="alert">
+        <div class="bg-blue-100 border-l-4 border-blue-500 text-blue-700 p-4 mb-4 rounded-xl shadow-lg" role="alert">
             <p class="font-bold">{% trans "Welcome, Driver!" %}</p>
-            <p>{% trans "Check your ongoing rides or view your earnings." %}</p>
+            <p>{% trans "Check your ongoing rides." %}</p>
             <a href="{% url 'my_rides' %}" class="text-blue-700 underline">{% trans "View Rides" %}</a>
         </div>
     {% else %}
         <!-- Passenger Alerts -->
-        <div class="bg-primary border-l-4 border-blue-400 text-white p-4 mb-4 text-lg" role="alert">
+        <div class="bg-primary border-l-4 border-blue-400 text-white p-4 mb-4 text-lg rounded-xl shadow-xl" role="alert">
             <p class="font-bold">{% trans "In a hurry?" %}</p>
             <a href="{% url 'request_ride' %}" class="text-white underline">{% trans "Book A Ride" %}</a>
         </div>
