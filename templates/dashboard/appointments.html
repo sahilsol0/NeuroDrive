@@ -157,6 +157,62 @@
     </div>
     {% endif %}
 
+    <!-- Pending Approvals (Only for Managers) -->
+    {% if request.user.is_superuser %}
+    <div class="mt-6 lg:mt-8 bg-white rounded-lg shadow-sm">
+        <div class="px-4 py-5 sm:px-6 border-b border-gray-200">
+            <h2 class="text-lg font-medium text-gray-800">{% trans "Pending Approvals" %}</h2>
+            <p class="mt-1 text-sm text-gray-500">{% trans "Approve or reject appointment requests" %}</p>
+        </div>
+        
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            {% trans "Driver" %}
+                        </th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            {% trans "Type" %}
+                        </th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            {% trans "Date" %}
+                        </th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            {% trans "Time" %}
+                        </th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            {% trans "Actions" %}
+                        </th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    {% for appointment in pending_approvals %}
+                    <tr>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="text-sm font-medium text-gray-900">{{ appointment.user.email }}</div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="text-sm text-gray-900">{{ appointment.get_appointment_type_display }}</div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="text-sm text-gray-900">{{ appointment.appointment_date }}</div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="text-sm text-gray-900">{{ appointment.time_slot }}</div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            <a href="{% url 'approve_appointment' appointment.id %}" class="text-green-600 hover:text-green-900 mr-3">{% trans "Approve" %}</a>
+                            <a href="{% url 'reject_appointment' appointment.id %}" class="text-red-600 hover:text-red-900">{% trans "Reject" %}</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+
     <!-- Upcoming Appointments -->
     <div class="mt-6 lg:mt-8 bg-white rounded-lg shadow-sm">
         <div class="px-4 py-5 sm:px-6 border-b border-gray-200">
@@ -296,62 +352,6 @@
                     </div>
                 </div>
             </form>
-        </div>
-    </div>
-    {% endif %}
-
-    <!-- Pending Approvals (Only for Managers) -->
-    {% if request.user.is_superuser %}
-    <div class="mt-6 lg:mt-8 bg-white rounded-lg shadow-sm">
-        <div class="px-4 py-5 sm:px-6 border-b border-gray-200">
-            <h2 class="text-lg font-medium text-gray-800">{% trans "Pending Approvals" %}</h2>
-            <p class="mt-1 text-sm text-gray-500">{% trans "Approve or reject appointment requests" %}</p>
-        </div>
-        
-        <div class="overflow-x-auto">
-            <table class="min-w-full divide-y divide-gray-200">
-                <thead class="bg-gray-50">
-                    <tr>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            {% trans "Driver" %}
-                        </th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            {% trans "Type" %}
-                        </th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            {% trans "Date" %}
-                        </th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            {% trans "Time" %}
-                        </th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            {% trans "Actions" %}
-                        </th>
-                    </tr>
-                </thead>
-                <tbody class="bg-white divide-y divide-gray-200">
-                    {% for appointment in pending_approvals %}
-                    <tr>
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <div class="text-sm font-medium text-gray-900">{{ appointment.user.email }}</div>
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <div class="text-sm text-gray-900">{{ appointment.get_appointment_type_display }}</div>
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <div class="text-sm text-gray-900">{{ appointment.appointment_date }}</div>
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <div class="text-sm text-gray-900">{{ appointment.time_slot }}</div>
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            <a href="{% url 'approve_appointment' appointment.id %}" class="text-green-600 hover:text-green-900 mr-3">{% trans "Approve" %}</a>
-                            <a href="{% url 'reject_appointment' appointment.id %}" class="text-red-600 hover:text-red-900">{% trans "Reject" %}</a>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
         </div>
     </div>
     {% endif %}

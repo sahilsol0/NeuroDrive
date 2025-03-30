@@ -6,7 +6,8 @@ from datetime import datetime, timedelta
 import time
 from django.utils import timezone
 from django.http import HttpResponseForbidden, HttpResponseNotFound, JsonResponse, StreamingHttpResponse
-from django.db.models import Count, Avg, Q, Max, Sum, F
+from django.db.models import Count, Avg, Q, Max, F
+from django.db.models.functions import Coalesce
 from django.shortcuts import get_object_or_404, render, redirect
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.views import View
@@ -181,13 +182,17 @@ def home(request):
 def leaderboard(request):
     # Fetch drivers with their ratings, number of rides, active rate, and behavior ratings
     drivers = Driver.objects.annotate(
-        total_rides_count=Count('driver_rides', filter=Q(driver_rides__status='completed')),  # Renamed to total_rides_count
-        avg_rating=Avg('driver_rides__review__driver_rating'),
-        avg_behavior_rating=Avg('driver_rides__driver_behavior_rating__rating'),  # Traverse Ride → DriverBehaviorRating
-        last_ride_date=Max('driver_rides__created_at', filter=Q(driver_rides__status='completed')),  # Renamed to last_ride_date
+        total_rides_count=Count('driver_rides', filter=Q(driver_rides__status='completed')), 
+        avg_rating=Coalesce(Avg('driver_rides__review__driver_rating'), 0.0),  # Replace NULL with 0
+        avg_behavior_rating=Coalesce(Avg('driver_rides__driver_behavior_rating__rating'), 0.0),  # Replace NULL with 0
+        last_ride_date=Max('driver_rides__created_at', filter=Q(driver_rides__status='completed')), 
     ).annotate(
-        combined_score=(F('avg_rating') * 0.7 + F('avg_behavior_rating') * 0.3)  # Combined score (equal weight)
-    ).order_by('-combined_score', '-avg_behavior_rating')  # Sort by combined score, then by behavior rating
+        combined_score=(F('avg_rating') * 0.5 + F('avg_behavior_rating') * 0.5)  # Combined score (equal weight)
+    ).order_by(
+        '-total_rides_count',  # Sort by most rides first (breaks ties)
+        '-combined_score',     # Then by combined score
+        '-avg_behavior_rating' # Then by behavior rating
+    )
 
     # Calculate active rate for each driver
     for driver in drivers:
@@ -207,8 +212,8 @@ def leaderboard(request):
     context = {
         'drivers': drivers,
         'active_drivers_count': drivers.filter(user__is_active=True).count(),
-        'average_rating': overall_avg_rating,  # Use the calculated overall average rating
-        'average_behavior_rating': overall_behavior_rating,  # Use the calculated overall behavior rating
+        'average_rating': overall_avg_rating,
+        'average_behavior_rating': overall_behavior_rating,
     }
     return render(request, 'dashboard/leaderboard.html', context)
 
