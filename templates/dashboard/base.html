@@ -315,64 +315,120 @@
         }
     });
 
-    const alertContainer = document.getElementById('alert-container');
-    alertContainer.innerHTML = ''; // Clear old alerts
+    // --- SSE Alert Handling ---
+    document.addEventListener('DOMContentLoaded', function() {
+        const alertContainer = document.getElementById('alert-container');
+        let eventSource = null; // Track SSE connection
 
-    // Only proceed if the user is the passenger of the current ride
-    const ridePassengerId = "{{ ride.passenger.id }}";
-    const currentUserId = "{{ request.user.id }}";
+        // Get active ride ID from context (provided by context processor)
+        const activeRideId = "{{ active_ride_id }}"; // Will be empty if no active ride
 
-    if (ridePassengerId === currentUserId && "{{ ride.status }}" !== 'completed') {
-        const rideId = "{{ ride.id }}";
-        const eventSource = new EventSource(`/sse/drowsiness-alerts/${rideId}/`);
+        // Function to display individual alert notifications
+        function addAlertNotification(alertData) {
+            if (!alertContainer) return;
 
-        // In ride_status.html
-        eventSource.onmessage = (event) => {
-            if (event.data.trim() === '') return;  // Skip empty keep-alive messages
-            
-            const alert = JSON.parse(event.data);
-            
-            // Create alert element with Tailwind classes
             const alertDiv = document.createElement('div');
-            alertDiv.className = `
+                // Make alerts clickable/interactive again
+            alertDiv.classList.add('pointer-events-auto');
+            // Using Tailwind classes for styling
+            alertDiv.className += `
                 animate__animated animate__fadeInRight
                 p-4 mb-3 rounded-xl border-l-4 shadow-lg
-                ${alert.alert_level === 'HIGH' ? 
+                ${alertData.alert_level === 'HIGH' ?
                 'bg-red-50 border-red-500 text-red-800' :
-                alert.alert_level === 'MEDIUM' ? 
-                'bg-yellow-50 border-yellow-500 text-yellow-800' :
-                'bg-blue-50 border-blue-500 text-blue-800'
+                'bg-yellow-50 border-yellow-500 text-yellow-800'
                 }
-            `;
-
+            `; // Assuming you only show HIGH/MEDIUM notifications
             alertDiv.innerHTML = `
                 <div class="flex items-center">
-                    <svg class="w-5 h-5 mr-2 ${alert.alert_level === 'HIGH' ? 'text-red-500' : 'text-yellow-500'}" 
+                        <svg class="w-5 h-5 mr-2 ${alertData.alert_level === 'HIGH' ? 'text-red-500' : 'text-yellow-500'}"
                         fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                             d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
                     </svg>
-                    <h3 class="font-bold">${alert.alert_level} Alert</h3>
+                    <h3 class="font-bold">${alertData.alert_level} Alert</h3>
                 </div>
-                <p class="mt-1 text-md">Drowsiness Score: <span class="font-mono">${alert.drowsiness_score.toFixed(2)}</span></p>
-                <p class="text-md opacity-75 mt-2">${new Date(alert.timestamp).toLocaleString()}</p>
+                <p class="mt-1 text-md">Drowsiness Score: <span class="font-mono">${alertData.drowsiness_score.toFixed(2)}</span></p>
+                <p class="text-md opacity-75 mt-2">${new Date(alertData.timestamp).toLocaleString()}</p>
             `;
+            alertContainer.prepend(alertDiv);
 
-            // Add to container
-            document.getElementById('alert-container').prepend(alertDiv);
-
-            // Auto-remove after 5 seconds with fade-out animation
+            // Auto-remove after 5 seconds
             setTimeout(() => {
                 alertDiv.classList.remove('animate__fadeInRight');
                 alertDiv.classList.add('animate__fadeOutRight');
-                setTimeout(() => alertDiv.remove(), 500); // Match animation duration
+                setTimeout(() => alertDiv.remove(), 500);
             }, 5000);
-        };
+        }
 
-        eventSource.onerror = function() {
-            console.error("SSE connection error");
-            eventSource.close();
-        };
-    }
+        // Function to update alert counts (ONLY if elements exist)
+        function updateAlertCounts(counts) {
+            const highAlertsSpan = document.getElementById('high-alerts-count');
+            const mediumAlertsSpan = document.getElementById('medium-alerts-count');
+            const lowAlertsSpan = document.getElementById('low-alerts-count');
+
+            // Only update if the elements are found on the current page
+            if (highAlertsSpan) highAlertsSpan.textContent = counts.high;
+            if (mediumAlertsSpan) mediumAlertsSpan.textContent = counts.medium;
+            if (lowAlertsSpan) lowAlertsSpan.textContent = counts.low;
+        }
+
+        // Setup SSE connection if an active ride exists for the user
+        function setupSSE() {
+            if (activeRideId) { // Check if context processor provided an ID
+                    if (eventSource) {
+                    eventSource.close(); // Close existing connection if any
+                    }
+
+                console.log(`Connecting to SSE for ride ID: ${activeRideId}`); // Debugging
+                eventSource = new EventSource(`/sse/drowsiness-alerts/${activeRideId}/`);
+
+                eventSource.onmessage = function(event) {
+                    if (event.data.trim() === '') return; // Skip keep-alive
+
+                    try {
+                        const data = JSON.parse(event.data);
+
+                        // Process based on message type
+                        if (data.type === 'alert') {
+                            addAlertNotification(data);
+                        } else if (data.type === 'counts') {
+                            // Conditionally update counts only if elements exist
+                            updateAlertCounts(data);
+                        }
+                    } catch (error) {
+                        console.error('Error parsing SSE data:', error, event.data);
+                    }
+                };
+
+                eventSource.onerror = function(error) {
+                    console.error('SSE error:', error);
+                    if (eventSource) {
+                        eventSource.close(); // Close on error
+                        eventSource = null; // Reset variable
+                    }
+                    // Optional: Maybe try reconnecting after a delay
+                    // setTimeout(setupSSE, 5000); // Example: Retry after 5 seconds
+                };
+
+            } else {
+                    console.log("No active ride found, SSE not connecting."); // Debugging
+                    if (eventSource) {
+                    eventSource.close(); // Ensure closed if ride becomes inactive
+                    eventSource = null;
+                    }
+            }
+        }
+
+        // Initialize
+        setupSSE();
+
+        // Cleanup on page leave
+        window.addEventListener('beforeunload', function() {
+            if (eventSource) {
+                eventSource.close();
+            }
+        });
+    });
 </script>
 {% endblock content %}

@@ -5,7 +5,7 @@ import re
 from datetime import datetime, timedelta
 import time
 from django.utils import timezone
-from django.http import JsonResponse, StreamingHttpResponse
+from django.http import HttpResponseForbidden, HttpResponseNotFound, JsonResponse, StreamingHttpResponse
 from django.db.models import Count, Avg, Q, Max, Sum, F
 from django.shortcuts import get_object_or_404, render, redirect
 from django.contrib.auth.decorators import login_required, user_passes_test
@@ -121,7 +121,6 @@ def admin_dashboard(request):
         )
         .order_by('-average_rating')[:10]
     )
-
     
     # Recent alerts
     recent_alerts = DrowsinessAlert.objects.select_related('driver', 'ride').order_by('-timestamp')[:10]
@@ -796,38 +795,63 @@ def drowsiness_alert(request):
 
 @login_required
 def sse_drowsiness_alerts(request, ride_id):
-    # Verify the requesting user is the passenger of this ride
-    ride = get_object_or_404(Ride, id=ride_id, passenger=request.user)
+    # Verify the requesting user is the passenger of this specific ride
+    try:
+        ride = Ride.objects.get(id=ride_id)
+        if ride.passenger != request.user:
+            # If not the passenger, deny access
+            return HttpResponseForbidden("You do not have permission to access alerts for this ride.")
+    except Ride.DoesNotExist:
+        return HttpResponseNotFound("Ride not found.")
 
     def event_stream():
-        last_id = None
+        last_alert_id = None
         try:
             while True:
-                # Check if ride is still active
-                ride.refresh_from_db()
-                if ride.status not in ['assigned', 'in_progress']:
-                    break
+                # Check if ride is still active (refresh from DB)
+                try:
+                    current_ride_status = Ride.objects.get(pk=ride_id).status
+                    if current_ride_status not in ['assigned', 'in_progress']:
+                        break # Stop streaming if ride is completed/cancelled
+                except Ride.DoesNotExist:
+                     break # Stop if ride somehow got deleted
 
-                # Get new alerts for this ride
-                query = DrowsinessAlert.objects.filter(ride_id=ride_id)
-                if last_id is not None:
-                    query = query.filter(id__gt=last_id)
-                
-                alerts = query.order_by('id')
-                
-                for alert in alerts:
+                # ... (Get new alerts logic) ...
+                new_alerts_query = DrowsinessAlert.objects.filter(
+                    ride_id=ride_id,
+                    alert_level__in=['HIGH', 'MEDIUM']
+                )
+                if last_alert_id is not None:
+                    new_alerts_query = new_alerts_query.filter(id__gt=last_alert_id)
+                new_alerts = new_alerts_query.order_by('id')
+
+                for alert in new_alerts:
                     yield f"data: {json.dumps({
+                        'type': 'alert',
                         'alert_level': alert.alert_level,
                         'drowsiness_score': alert.drowsiness_score,
                         'timestamp': alert.timestamp.isoformat()
                     })}\n\n"
-                    last_id = alert.id
-                
-                # Add small delay to prevent tight looping
-                time.sleep(1)
+                    last_alert_id = alert.id
+
+                # ... (Calculate and send counts logic) ...
+                high_alerts = DrowsinessAlert.objects.filter(ride_id=ride_id, alert_level='HIGH').count()
+                medium_alerts = DrowsinessAlert.objects.filter(ride_id=ride_id, alert_level='MEDIUM').count()
+                low_alerts = DrowsinessAlert.objects.filter(ride_id=ride_id, alert_level='LOW').count()
+
+                yield f"data: {json.dumps({
+                    'type': 'counts',
+                    'high': high_alerts,
+                    'medium': medium_alerts,
+                    'low': low_alerts
+                })}\n\n"
+
+                time.sleep(2) # Interval for sending counts
 
         except Exception as e:
-            print(f"SSE Error: {str(e)}")
+            # Handle client disconnect or other errors gracefully
+            print(f"SSE Error for ride {ride_id}: {str(e)}")
+        # Ensure the loop terminates and the response finishes when done
 
     response = StreamingHttpResponse(
         event_stream(),
