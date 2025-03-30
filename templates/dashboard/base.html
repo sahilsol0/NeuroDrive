@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 {% load static %}
 {% load i18n %}
+{% load custom_filters %}
 
 {% block title %}{% trans "Dashboard" %} | {% block dashboard_title %}{% endblock dashboard_title %}{% endblock title %}
 {% block nav %}
@@ -29,7 +30,10 @@
                     <i data-lucide="user" class="w-6 h-6"></i>
                 </button>
             </div>
-            <span class="text-lg font-semibold">{% trans "Dashboard" %} | {{ request.resolver_match.url_name |title }}</span>
+            <span class="text-lg font-semibold">
+                {% trans "Dashboard" %} 
+                <span class="font-normal">| {{ request.resolver_match.url_name|humanize_url_name }}</span>
+            </span>
             <button id="mobile-menu-button" class="text-gray-500 hover:text-gray-700">
                 <i data-lucide="menu" class="w-6 h-6"></i>
             </button>
@@ -119,8 +123,8 @@
                                 <span class="ml-3">{% trans "Book Ride" %}</span>
                             </a>   
                             <a href="{% url "appointments" %}" class="flex items-center px-4 py-3 {% if request.resolver_match.url_name == 'appointments' %}text-white bg-primary{% else %}text-gray-700 hover:bg-gray-100{% endif %} rounded-lg">
-                                <i data-lucide="calendar" class="w-5 h-5"></i>
-                                <span class="ml-3">{% trans "Book Appointment" %}</span>
+                                <i data-lucide="user-round-plus" class="w-5 h-5"></i>
+                                <span class="ml-3">{% trans "Upgrade to Driver" %}</span>
                             </a>
                         {% endif %}
                 </div>
@@ -296,7 +300,7 @@
         </a>
         <a href="{% url 'request_ride' %}" class="pb-2 pt-4 flex flex-col items-center justify-center rounded-xl {% if request.resolver_match.url_name == 'request_ride' %}text-primary bg-gray-100{% else %}text-gray-600{% endif %}">
             <i data-lucide="car-taxi-front" class="w-6 h-6"></i>
-            <span class="text-md mt-1">{% trans "Book" %}</span>
+            <span class="text-md mt-1">{% trans "Book Ride" %}</span>
         </a>
     {% endif %}
 </header>
