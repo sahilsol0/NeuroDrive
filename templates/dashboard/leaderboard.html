@@ -231,9 +231,64 @@
         const searchInput = document.getElementById('player-search');
         const tableRows = document.querySelectorAll('.searchable-row');
         const cards = document.querySelectorAll('.searchable-card');
-    
+        const resultsText = document.querySelector('.text-xs.text-gray-700, .text-sm.text-gray-700');
+        
+        // Store original states
+        const originalStates = {
+            tableRanks: [],
+            cardRanks: [],
+            originalResultsText: resultsText ? resultsText.innerHTML : ''
+        };
+
+        // Save original ranks and trophy icons
+        tableRows.forEach((row, index) => {
+            const rankElement = row.querySelector('.text-sm.font-medium.text-gray-900');
+            if (rankElement) {
+                originalStates.tableRanks[index] = rankElement.innerHTML;
+            }
+        });
+
+        cards.forEach((card, index) => {
+            const rankElement = card.querySelector('.text-lg.font-bold.text-gray-900');
+            if (rankElement) {
+                originalStates.cardRanks[index] = rankElement.innerHTML;
+            }
+        });
+
+        function resetToOriginalState() {
+            // Reset table rows
+            tableRows.forEach((row, index) => {
+                const rankElement = row.querySelector('.text-sm.font-medium.text-gray-900');
+                if (rankElement) {
+                    rankElement.innerHTML = originalStates.tableRanks[index];
+                }
+                row.classList.remove('hidden');
+            });
+            
+            // Reset cards
+            cards.forEach((card, index) => {
+                const rankElement = card.querySelector('.text-lg.font-bold.text-gray-900');
+                if (rankElement) {
+                    rankElement.innerHTML = originalStates.cardRanks[index];
+                }
+                card.classList.remove('hidden');
+            });
+            
+            // Reset results text with proper spacing
+            if (resultsText) {
+                resultsText.innerHTML = originalStates.originalResultsText;
+            }
+        }
+
         searchInput.addEventListener('input', function(e) {
-            const query = e.target.value.toLowerCase();
+            const query = e.target.value.toLowerCase().trim();
+            
+            // Reset if search is empty
+            if (query === '') {
+                resetToOriginalState();
+                return;
+            }
+            
             let visibleCount = 0;
     
             // Handle table rows
@@ -242,16 +297,22 @@
                 const playerId = row.dataset.playerId;
                 const matches = playerName.includes(query) || playerId.includes(query);
                 
-                row.classList.toggle('hidden', !matches);
-                
                 if (matches) {
+                    row.classList.remove('hidden');
                     visibleCount++;
-                    const visibleRank = row.querySelector('.text-sm.font-medium.text-gray-900');
-                    if (visibleRank && !visibleRank.querySelector('i')) {
-                        visibleRank.textContent = visibleCount;
+                    
+                    // Update rank number in table (only for non-trophy positions)
+                    const rankElement = row.querySelector('.text-sm.font-medium.text-gray-900');
+                    if (rankElement && visibleCount > 3) {
+                        rankElement.textContent = visibleCount;
                     }
+                } else {
+                    row.classList.add('hidden');
                 }
             });
+            
+            // Reset count for cards to maintain separate numbering
+            let cardVisibleCount = 0;
             
             // Handle cards
             cards.forEach(card => {
@@ -259,21 +320,28 @@
                 const playerId = card.dataset.playerId;
                 const matches = playerName.includes(query) || playerId.includes(query);
                 
-                card.classList.toggle('hidden', !matches);
-                
                 if (matches) {
-                    visibleCount++;
+                    card.classList.remove('hidden');
+                    cardVisibleCount++;
+                    
+                    // Update rank number in card (only for non-trophy positions)
                     const rankElement = card.querySelector('.text-lg.font-bold.text-gray-900');
-                    if (rankElement && !rankElement.querySelector('i')) {
-                        rankElement.textContent = visibleCount;
+                    if (rankElement && cardVisibleCount > 3) {
+                        rankElement.textContent = cardVisibleCount;
                     }
+                } else {
+                    card.classList.add('hidden');
                 }
             });
     
-            // Update the results count in pagination
-            const resultsText = document.querySelector('.text-xs.text-gray-700, .text-sm.text-gray-700');
+            // Update the results count with proper spacing
             if (resultsText) {
-                resultsText.innerHTML = `{% trans "Showing " %} <span class="font-medium">1</span> {% trans " to " %} <span class="font-medium">${visibleCount}</span> {% trans " of " %} <span class="font-medium">${tableRows.length || cards.length}</span> {% trans " results" %}`;
+                resultsText.innerHTML = `
+                    {% trans "Showing" %}&nbsp;
+                    <span class="font-medium">${visibleCount || cardVisibleCount}</span>&nbsp;
+                    {% trans "of" %}&nbsp;<span class="font-medium">${tableRows.length || cards.length}</span>&nbsp;
+                    {% trans "results" %}
+                `.trim().replace(/\s+/g, ' ');
             }
         });
     });
