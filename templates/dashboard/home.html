@@ -37,21 +37,18 @@
                 <h3 class="text-sm font-medium text-gray-500">{% trans "Total Users" %}</h3>
                 <div class="mt-2 flex items-baseline">
                     <p class="text-xl lg:text-2xl font-semibold text-gray-900">{{ total_users }}</p>
-                    <span class="ml-2 text-sm font-medium text-green-600">+5.2%</span>
                 </div>
             </div>
             <div class="p-4 lg:p-6 bg-white rounded-lg shadow-sm">
                 <h3 class="text-sm font-medium text-gray-500">{% trans "Total Drivers" %}</h3>
                 <div class="mt-2 flex items-baseline">
                     <p class="text-xl lg:text-2xl font-semibold text-gray-900">{{ total_drivers }}</p>
-                    <span class="ml-2 text-sm font-medium text-green-600">+3.8%</span>
                 </div>
             </div>
             <div class="p-4 lg:p-6 bg-white rounded-lg shadow-sm">
                 <h3 class="text-sm font-medium text-gray-500">{% trans "Pending Approvals" %}</h3>
                 <div class="mt-2 flex items-baseline">
                     <p class="text-xl lg:text-2xl font-semibold text-gray-900">{{ pending_approvals_count }}</p>
-                    <span class="ml-2 text-sm font-medium text-green-600">+2.1%</span>
                 </div>
             </div>
         {% elif user.is_driver %}
