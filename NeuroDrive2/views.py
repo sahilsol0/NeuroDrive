@@ -156,27 +156,141 @@ def admin_dashboard(request):
     
     return render(request, 'dashboard/admin_dashboard.html', context)
 
+@login_required
 def home(request):
     context = {}
+    recent_activities = []
+    
     if request.user.is_superuser:
+        # Admin activities
         context.update({
             'total_users': CustomUser.objects.count(),
             'total_drivers': Driver.objects.count(),
             'pending_approvals_count': Appointment.objects.filter(status='pending').count(),
         })
+        
+        # Recent appointments for admin
+        recent_appointments = Appointment.objects.order_by('-created_at')[:5]
+        for appointment in recent_appointments:
+            recent_activities.append({
+                'title': f"{appointment.get_appointment_type_display()} appointment",
+                'description': f"From {appointment.user.email}",
+                'timestamp': appointment.created_at,
+                'type': 'appointment',
+                'status': appointment.status
+            })
+            
+        # Recent rides for admin
+        recent_rides = Ride.objects.order_by('-created_at')[:5]
+        for ride in recent_rides:
+            recent_activities.append({
+                'title': f"Ride to {ride.dropoff_location}",
+                'description': f"Passenger: {ride.passenger.email}",
+                'timestamp': ride.created_at,
+                'type': 'ride',
+                'status': ride.status
+            })
+            
     elif request.user.is_driver:
         driver = request.user.driver
         context.update({
             'completed_rides': Ride.objects.filter(driver=driver, status='completed').count(),
-            # 'earnings': driver.earnings,  # Assuming earnings is a field in the Driver model
             'average_rating': driver.average_rating,
         })
+        
+        # Driver's recent rides
+        recent_rides = Ride.objects.filter(driver=driver).order_by('-created_at')[:5]
+        for ride in recent_rides:
+            recent_activities.append({
+                'title': f"Ride to {ride.dropoff_location}",
+                'description': f"Passenger: {ride.passenger.get_full_name() or ride.passenger.email}",
+                'timestamp': ride.created_at,
+                'type': 'ride',
+                'status': ride.status
+            })
+            
+        # Driver's recent reviews
+        recent_reviews = RideReview.objects.filter(ride__driver=driver).order_by('-created_at')[:5]
+        for review in recent_reviews:
+            recent_activities.append({
+                'title': f"New {review.driver_rating}★ review",
+                'description': f"From ride to {review.ride.dropoff_location}",
+                'timestamp': review.created_at,
+                'type': 'review',
+                'status': 'completed'
+            })
+            
     else:
+        # Passenger activities
+        total_reviews_given = RideReview.objects.filter(ride__passenger=request.user).count()
+        
         context.update({
             'total_rides': Ride.objects.filter(passenger=request.user).count(),
             'active_bookings': Ride.objects.filter(passenger=request.user, status__in=['assigned', 'in_progress']).count(),
-            # 'favorite_driver': request.user.favorite_driver,  # Assuming favorite_driver is a field in the User model
+            'total_reviews_given': total_reviews_given,
         })
+
+        # Calculate favorite driver (most rides with positive ratings)
+        favorite_driver = None
+        driver_stats = (
+            Ride.objects
+            .filter(passenger=request.user, status='completed', driver__isnull=False)
+            .annotate(
+                positive_review=Count(
+                    'review',
+                    filter=Q(review__driver_rating__gte=4)  # Consider ratings 4+ as positive
+                )
+            )
+            .values('driver')
+            .annotate(
+                total_rides=Count('id'),
+                positive_rides=Count('review', filter=Q(review__driver_rating__gte=4)),
+                avg_rating=Avg('review__driver_rating')
+            )
+            .order_by('-positive_rides', '-total_rides', '-avg_rating')
+        )
+        
+        if driver_stats:
+            top_driver_stats = driver_stats[0]
+            try:
+                favorite_driver = Driver.objects.get(id=top_driver_stats['driver'])
+                favorite_driver_stats = {
+                    'total_rides': top_driver_stats['total_rides'],
+                    'positive_rides': top_driver_stats['positive_rides'],
+                    'avg_rating': round(top_driver_stats['avg_rating'], 1) if top_driver_stats['avg_rating'] else None
+                }
+                context['favorite_driver'] = favorite_driver
+                context['favorite_driver_stats'] = favorite_driver_stats
+            except Driver.DoesNotExist:
+                pass
+        
+        # Passenger's recent rides
+        recent_rides = Ride.objects.filter(passenger=request.user).order_by('-created_at')[:5]
+        for ride in recent_rides:
+            driver_name = ride.driver.full_name if ride.driver else "No driver assigned"
+            recent_activities.append({
+                'title': f"Ride to {ride.dropoff_location}",
+                'description': f"Driver: {driver_name}",
+                'timestamp': ride.created_at,
+                'type': 'ride',
+                'status': ride.status
+            })
+            
+        # Passenger's recent appointments
+        recent_appointments = Appointment.objects.filter(user=request.user).order_by('-created_at')[:3]
+        for appointment in recent_appointments:
+            recent_activities.append({
+                'title': f"{appointment.get_appointment_type_display()}",
+                'description': f"Scheduled for {appointment.appointment_date}",
+                'timestamp': appointment.created_at,
+                'type': 'appointment',
+                'status': appointment.status
+            })
+    
+    # Sort all activities by timestamp (newest first) and take the 6 most recent
+    recent_activities.sort(key=lambda x: x['timestamp'], reverse=True)
+    context['recent_activities'] = recent_activities[:6]
+    
     return render(request, 'dashboard/home.html', context)
 
 def leaderboard(request):
@@ -189,9 +303,9 @@ def leaderboard(request):
     ).annotate(
         combined_score=(F('avg_rating') * 0.5 + F('avg_behavior_rating') * 0.5)  # Combined score (equal weight)
     ).order_by(
-        '-total_rides_count',  # Sort by most rides first (breaks ties)
         '-combined_score',     # Then by combined score
-        '-avg_behavior_rating' # Then by behavior rating
+        '-avg_behavior_rating', # Then by behavior rating
+        '-total_rides_count',  # Sort by most rides first (breaks ties)
     )
 
     # Calculate active rate for each driver
