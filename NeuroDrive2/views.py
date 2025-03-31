@@ -193,13 +193,37 @@ def home(request):
             
     elif request.user.is_driver:
         driver = request.user.driver
+        
+        # Calculate driver stats
+        completed_rides = Ride.objects.filter(driver=driver, status='completed').count()
+        in_progress_rides = Ride.objects.filter(driver=driver, status='in_progress').count()
+        total_alerts = DrowsinessAlert.objects.filter(driver=driver).count()
+        high_alerts = DrowsinessAlert.objects.filter(driver=driver, alert_level='HIGH').count()
+        
+        # Calculate behavior rating
+        behavior_rating = (
+            DriverBehaviorRating.objects
+            .filter(ride__driver=driver)
+            .aggregate(avg_rating=Avg('rating'))['avg_rating'] or 0
+        )
+        
+        avg_rating = (
+            RideReview.objects
+            .filter(ride__driver=driver, ride__status='completed')
+            .aggregate(avg_rating=Coalesce(Avg('driver_rating'), 0.0))['avg_rating']
+        )
+
         context.update({
-            'completed_rides': Ride.objects.filter(driver=driver, status='completed').count(),
-            'average_rating': driver.average_rating,
+            'completed_rides': completed_rides,
+            'in_progress_rides': in_progress_rides,
+            'total_alerts': total_alerts,
+            'high_alerts': high_alerts,
+            'behavior_rating': round(behavior_rating, 1),
+            'average_rating': round(avg_rating, 1),  # Use the updated calculation
         })
         
-        # Driver's recent rides
-        recent_rides = Ride.objects.filter(driver=driver).order_by('-created_at')[:5]
+        # Driver's recent activities
+        recent_rides = Ride.objects.filter(driver=driver).order_by('-created_at')[:3]
         for ride in recent_rides:
             recent_activities.append({
                 'title': f"Ride to {ride.dropoff_location}",
@@ -209,17 +233,15 @@ def home(request):
                 'status': ride.status
             })
             
-        # Driver's recent reviews
-        recent_reviews = RideReview.objects.filter(ride__driver=driver).order_by('-created_at')[:5]
-        for review in recent_reviews:
+        recent_alerts = DrowsinessAlert.objects.filter(driver=driver).order_by('-timestamp')[:2]
+        for alert in recent_alerts:
             recent_activities.append({
-                'title': f"New {review.driver_rating}★ review",
-                'description': f"From ride to {review.ride.dropoff_location}",
-                'timestamp': review.created_at,
-                'type': 'review',
-                'status': 'completed'
+                'title': f"Drowsiness alert",
+                'description': f"Blink rate: {alert.blink_rate} - Yawns: {alert.yawn_frequency}",
+                'timestamp': alert.timestamp,
+                'type': 'alert',
+                'status': alert.alert_level.lower()
             })
-            
     else:
         # Passenger activities
         total_reviews_given = RideReview.objects.filter(ride__passenger=request.user).count()
@@ -305,7 +327,7 @@ def leaderboard(request):
     ).order_by(
         '-combined_score',     # Then by combined score
         '-avg_behavior_rating', # Then by behavior rating
-        '-total_rides_count',  # Sort by most rides first (breaks ties)
+        '-avg_rating',  # Sort by most rides first (breaks ties)
     )
 
     # Calculate active rate for each driver
